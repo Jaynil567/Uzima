@@ -25,7 +25,12 @@ SECRET_KEY = 'django-insecure-(itzg&5l9q4&_5017e0p_vd4rj(4)##txbzfmrip$!6x#%k49z
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = [
+    'uzima-yzmc.vercel.app'
+    "uzima-eta.vercel.app",
+    "localhost",
+    "127.0.0.1",
+]
 
 
 # Application definition
