@@ -459,18 +459,25 @@ body {
 /* Bottom Navigation Bar (Mobile Responsive) */
 .bottom-nav {
   position: fixed;
-  bottom: 0;
   left: 0;
-  width: 100%;
-  height: 65px;
-  background: rgba(15, 15, 20, 0.95);
-  border-top: 1px solid var(--card-border);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  right: 0;
+  bottom: 0;
+  height: 70px;
+
   display: flex;
-  justify-content: space-around;
   align-items: center;
-  z-index: 100;
+  justify-content: space-around;
+
+  background: #111118;
+  border-top: 1px solid #292936;
+
+  z-index: 9999;
+}
+
+@media (max-width: 768px) {
+  .bottom-nav {
+    display: flex;
+  }
 }
 
 .nav-item {
