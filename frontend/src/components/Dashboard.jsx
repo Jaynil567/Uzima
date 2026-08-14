@@ -202,8 +202,27 @@ export default function Dashboard({ token, onUserClick, onCombineHistoryClick })
         </div>
       ) : (
         <div>
-          {/* Render Custom SVG line chart */}
-          {renderSVGChart(data.trends)}
+          {/* Company Totals Cards */}
+          <div className="metrics-grid" style={{ marginBottom: '1.75rem' }}>
+            <div className="metric-card invest-card">
+              <span className="label">Company Invest</span>
+              <span className="value">
+                ₹{data.users.reduce((acc, u) => acc + u.total_invest, 0).toLocaleString('en-IN')}
+              </span>
+            </div>
+            <div className="metric-card collect-card">
+              <span className="label">Company Collect</span>
+              <span className="value">
+                ₹{data.users.reduce((acc, u) => acc + u.total_collect, 0).toLocaleString('en-IN')}
+              </span>
+            </div>
+            <div className="metric-card balance-card">
+              <span className="label">Company Balance</span>
+              <span className="value">
+                ₹{(data.users.reduce((acc, u) => acc + u.total_invest, 0) - data.users.reduce((acc, u) => acc + u.total_collect, 0)).toLocaleString('en-IN')}
+              </span>
+            </div>
+          </div>
 
           {/* All Users Ledger */}
           <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '1.5rem 0 0.75rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -238,19 +257,24 @@ export default function Dashboard({ token, onUserClick, onCombineHistoryClick })
             ))}
           </div>
 
-          <button 
-            onClick={onCombineHistoryClick} 
-            className="btn btn-primary"
-            style={{ 
-              background: 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)', 
-              marginTop: '1rem',
-              display: 'inline-flex',
-              gap: '0.5rem',
-              alignItems: 'center'
-            }}
-          >
-            <FileText size={16} /> Combine History Ledger <ArrowRight size={16} />
-          </button>
+          <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem', marginBottom: '2.5rem' }}>
+            <button 
+              onClick={onCombineHistoryClick} 
+              className="btn btn-primary"
+              style={{ 
+                background: 'linear-gradient(135deg, #a855f7 0%, #7c3aed 100%)', 
+                display: 'inline-flex',
+                gap: '0.5rem',
+                alignItems: 'center',
+                flex: 1
+              }}
+            >
+              <FileText size={16} /> Combine History Ledger <ArrowRight size={16} />
+            </button>
+          </div>
+
+          {/* Render Custom SVG line chart at the bottom */}
+          {renderSVGChart(data.trends)}
         </div>
       )}
 
