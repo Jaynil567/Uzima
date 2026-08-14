@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { PlusCircle, ArrowDownCircle, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { getBackendUrl } from '../utils/api'
 
 export default function Home({ token, onTransactionLogged }) {
   const [amount, setAmount] = useState('')
@@ -8,9 +9,6 @@ export default function Home({ token, onTransactionLogged }) {
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
 
-  const getBackendUrl = (path) => {
-    return `http://${window.location.hostname}:8000${path}`
-  }
 
   const handleTransaction = async (type) => {
     setError('')

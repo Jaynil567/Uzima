@@ -1,14 +1,13 @@
 import { useState, useEffect } from 'react'
 import { Users, FileText, ArrowRight, Loader2, AlertCircle, TrendingUp, TrendingDown } from 'lucide-react'
+import { getBackendUrl } from '../utils/api'
 
 export default function Dashboard({ token, onUserClick, onCombineHistoryClick }) {
   const [data, setData] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const getBackendUrl = (path) => {
-    return `http://${window.location.hostname}:8000${path}`
-  }
+
 
   const fetchDashboardData = async () => {
     setLoading(true)

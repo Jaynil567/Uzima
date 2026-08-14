@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Calendar, Search, Filter, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
+import { getBackendUrl } from '../utils/api'
 
 export default function CombineHistory({ token }) {
   const [transactions, setTransactions] = useState([])
@@ -12,9 +13,7 @@ export default function CombineHistory({ token }) {
   const [selectedType, setSelectedType] = useState('ALL')
   const [sortBy, setSortBy] = useState('NEWEST') // 'NEWEST' | 'OLDEST'
 
-  const getBackendUrl = (path) => {
-    return `http://${window.location.hostname}:8000${path}`
-  }
+
 
   const fetchAllTransactions = async () => {
     setLoading(true)

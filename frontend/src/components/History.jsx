@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Calendar, Trash2, Edit, X, Loader2, AlertCircle, TrendingUp, TrendingDown, IndianRupee } from 'lucide-react'
+import { getBackendUrl } from '../utils/api'
 
 export default function History({ userId, username, token, currentUserId, onDataChanged }) {
   const [transactions, setTransactions] = useState([])
@@ -17,9 +18,7 @@ export default function History({ userId, username, token, currentUserId, onData
 
   const isSelf = userId === currentUserId
 
-  const getBackendUrl = (path) => {
-    return `http://${window.location.hostname}:8000${path}`
-  }
+
 
   const fetchUserHistory = async () => {
     setLoading(true)

@@ -6,6 +6,7 @@ import History from './components/History'
 import Dashboard from './components/Dashboard'
 import CombineHistory from './components/CombineHistory'
 import { Loader2, PlusCircle, Calendar, LayoutDashboard, FileText, LogOut } from 'lucide-react'
+import { getBackendUrl } from './utils/api'
 
 export default function App() {
   const [token, setToken] = useState(null)
@@ -17,11 +18,7 @@ export default function App() {
   const [activeScreen, setActiveScreen] = useState('home')
   const [selectedHistoryUser, setSelectedHistoryUser] = useState(null)
 
-  // Resolve backend URL dynamically based on host
-  const getBackendUrl = (path) => {
-    const hostname = window.location.hostname
-    return `http://${hostname}:8000${path}`
-  }
+
 
   // Validate session on mount
   useEffect(() => {
