@@ -9,7 +9,6 @@ export const getBackendUrl = (path) => {
   if (isLocal) {
     return `http://${hostname}:8000${path}`
   } else {
-    // Deployed production Vercel backend URL
-    return `https://uzima-eta.vercel.app/${path}`
+    return `https://uzima-eta.vercel.app${path}`
   }
 }
