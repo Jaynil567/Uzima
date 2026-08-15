@@ -189,7 +189,7 @@ export default function CombineHistory({ token }) {
 
                 <div className="history-right" style={{ gap: '0.5rem' }}>
                   <span className="history-amount" style={{ color: isInvest ? 'var(--error)' : 'var(--success)' }}>
-                    {isInvest ? '+' : '-'} ₹{tx.amount.toLocaleString('en-IN')}
+                    {isInvest ? '-' : '+'} ₹{tx.amount.toLocaleString('en-IN')}
                   </span>
                 </div>
               </div>

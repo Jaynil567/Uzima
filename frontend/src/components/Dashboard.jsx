@@ -219,7 +219,7 @@ export default function Dashboard({ token, onUserClick, onCombineHistoryClick })
             <div className="metric-card balance-card">
               <span className="label">Company Balance</span>
               <span className="value">
-                ₹{(data.users.reduce((acc, u) => acc + u.total_invest, 0) - data.users.reduce((acc, u) => acc + u.total_collect, 0)).toLocaleString('en-IN')}
+                ₹{(data.users.reduce((acc, u) => acc + u.total_collect, 0) - data.users.reduce((acc, u) => acc + u.total_invest, 0)).toLocaleString('en-IN')}
               </span>
             </div>
           </div>

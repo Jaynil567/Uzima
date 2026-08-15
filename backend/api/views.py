@@ -203,7 +203,7 @@ def dashboard_summary_view(request):
             
             total_invest = sum(float(tx.amount) for tx in invests)
             total_collect = sum(float(tx.amount) for tx in collects)
-            balance = total_invest - total_collect
+            balance = total_collect - total_invest
             
             user_summaries.append({
                 'user_id': u.id,

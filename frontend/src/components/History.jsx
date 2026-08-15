@@ -131,7 +131,7 @@ export default function History({ userId, username, token, currentUserId, onData
   // Calculate metrics
   const totalInvest = transactions.filter(t => t.type === 'INVEST').reduce((acc, t) => acc + t.amount, 0)
   const totalCollect = transactions.filter(t => t.type === 'COLLECT').reduce((acc, t) => acc + t.amount, 0)
-  const balance = totalInvest - totalCollect
+  const balance = totalCollect - totalInvest
 
   // Group transactions by month
   const groupedTransactions = {};
@@ -219,7 +219,7 @@ export default function History({ userId, username, token, currentUserId, onData
 
                       <div className="history-right">
                         <span className="history-amount" style={{ color: isInvest ? 'var(--error)' : 'var(--success)' }}>
-                          {isInvest ? '+' : '-'} ₹{tx.amount.toLocaleString('en-IN')}
+                          {isInvest ? '-' : '+'} ₹{tx.amount.toLocaleString('en-IN')}
                         </span>
                         
                         {isSelf && (

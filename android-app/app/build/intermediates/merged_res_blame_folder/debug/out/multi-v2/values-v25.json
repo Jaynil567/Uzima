@@ -1,0 +1,20 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.uzimahisab.app-mergeDebugResources-27:/values-v25/values-v25.xml",
+            "map": [
+                {
+                    "source": "C:\\Users\\wwwbh\\.gradle\\caches\\transforms-3\\61845c4d76d0f2d50d95c2f827836839\\transformed\\appcompat-1.6.1\\res\\values-v25\\values-v25.xml",
+                    "from": {
+                        "startLines": "2,3,4,6",
+                        "startColumns": "4,4,4,4",
+                        "startOffsets": "55,126,209,308",
+                        "endLines": "2,3,5,7",
+                        "endColumns": "70,82,12,12",
+                        "endOffsets": "121,204,303,414"
+                    }
+                }
+            ]
+        }
+    ]
+}
