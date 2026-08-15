@@ -112,19 +112,6 @@ export default function Home({ token, onTransactionLogged }) {
           </div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="date">Date</label>
-          <input
-            type="date"
-            id="date"
-            className="form-control"
-            style={{ paddingLeft: '0.75rem' }}
-            required
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            disabled={loading}
-          />
-        </div>
 
         <div className="form-group" style={{ marginBottom: '2rem' }}>
           <label htmlFor="notes">Notes / Item Details</label>
@@ -137,6 +124,20 @@ export default function Home({ token, onTransactionLogged }) {
             required
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
+            disabled={loading}
+          />
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="date">Date</label>
+          <input
+            type="date"
+            id="date"
+            className="form-control"
+            style={{ paddingLeft: '0.75rem' }}
+            required
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
             disabled={loading}
           />
         </div>
