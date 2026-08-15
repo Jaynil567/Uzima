@@ -231,11 +231,13 @@ export default function Dashboard({ token, onUserClick, onCombineHistoryClick })
           
           <div className="users-ledger">
             {data.users.map((u) => (
-              <div key={u.user_id} className="user-ledger-row">
-                <span 
-                  className="user-name" 
-                  onClick={() => onUserClick(u.user_id, u.username)}
-                >
+              <div 
+                key={u.user_id} 
+                className="user-ledger-row"
+                style={{ cursor: 'pointer' }}
+                onClick={() => onUserClick(u.user_id, u.username)}
+              >
+                <span className="user-name">
                   {u.username}
                 </span>
 

@@ -2,9 +2,18 @@ import { useState } from 'react'
 import { PlusCircle, ArrowDownCircle, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 import { getBackendUrl } from '../utils/api'
 
+const getTodayDateString = () => {
+  const today = new Date()
+  const yyyy = today.getFullYear()
+  const mm = String(today.getMonth() + 1).padStart(2, '0')
+  const dd = String(today.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
 export default function Home({ token, onTransactionLogged }) {
   const [amount, setAmount] = useState('')
   const [notes, setNotes] = useState('')
+  const [date, setDate] = useState(getTodayDateString())
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
@@ -37,6 +46,7 @@ export default function Home({ token, onTransactionLogged }) {
           type,
           amount: parsedAmount,
           notes: notes.trim(),
+          date: date,
         }),
       })
 
@@ -46,6 +56,7 @@ export default function Home({ token, onTransactionLogged }) {
         setSuccess(`${type === 'INVEST' ? 'Invested' : 'Collected'} ₹${parsedAmount.toLocaleString('en-IN')} successfully!`)
         setAmount('')
         setNotes('')
+        setDate(getTodayDateString())
         if (onTransactionLogged) onTransactionLogged()
       } else {
         setError(data.error || 'Failed to log transaction')
@@ -99,6 +110,20 @@ export default function Home({ token, onTransactionLogged }) {
               disabled={loading}
             />
           </div>
+        </div>
+
+        <div className="form-group">
+          <label htmlFor="date">Date</label>
+          <input
+            type="date"
+            id="date"
+            className="form-control"
+            style={{ paddingLeft: '0.75rem' }}
+            required
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+            disabled={loading}
+          />
         </div>
 
         <div className="form-group" style={{ marginBottom: '2rem' }}>

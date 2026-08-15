@@ -123,12 +123,21 @@ def transaction_list_create_view(request):
         if not notes or notes.strip() == '':
             return Response({'error': 'Notes are required'}, status=status.HTTP_400_BAD_REQUEST)
             
+        custom_date_str = request.data.get('date')
+        tx_date = timezone.now()
+        if custom_date_str:
+            from django.utils.dateparse import parse_date
+            parsed_d = parse_date(custom_date_str)
+            if parsed_d:
+                tx_date = timezone.make_aware(timezone.datetime.combine(parsed_d, timezone.now().time()))
+            
         try:
             t = Transaction.objects.create(
                 user=request.user,
                 type=tx_type,
                 amount=amount,
-                notes=notes.strip()
+                notes=notes.strip(),
+                date=tx_date
             )
             return Response({
                 'message': 'Transaction logged successfully',

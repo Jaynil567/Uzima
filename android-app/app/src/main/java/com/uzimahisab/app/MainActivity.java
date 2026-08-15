@@ -29,6 +29,9 @@ public class MainActivity extends AppCompatActivity {
         // Prevent opening urls in phone's default browser chrome/safari, load inside webview
         webView.setWebViewClient(new WebViewClient());
 
+        // Delegate standard JS alert/confirm dialog supports to our CustomWebChromeClient
+        webView.setWebChromeClient(new CustomWebChromeClient(this));
+
         // Load the deployed frontend vercel URL
         webView.loadUrl("https://uzima-yzmc.vercel.app/");
     }
