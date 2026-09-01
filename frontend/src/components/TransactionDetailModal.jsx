@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { X, Calendar, User, FileText, ArrowDownRight, ArrowUpRight, Hash, Clock, CheckCircle2, Loader2 } from 'lucide-react'
+import { X, Calendar, User, FileText, ArrowDownRight, ArrowUpRight, Hash, Clock, Loader2 } from 'lucide-react'
 import { getBackendUrl } from '../utils/api'
 
 export default function TransactionDetailModal({ transaction, txId, token, onClose }) {
@@ -71,36 +71,36 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
 
   return (
     <div 
+      className="modal-overlay"
       style={{
         position: 'fixed',
         top: 0,
         left: 0,
         right: 0,
         bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.75)',
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        padding: '1rem',
+        padding: '1.25rem',
         zIndex: 9999,
-        animation: 'fadeIn 0.2s ease-out'
       }}
       onClick={onClose}
     >
       <div 
+        className="modal-content animate-scale-up"
         style={{
-          backgroundColor: 'var(--card)',
-          border: '1px solid var(--border)',
-          borderRadius: '1.25rem',
+          backgroundColor: '#121217',
+          border: '1px solid var(--card-border)',
+          borderRadius: 'var(--radius-lg)',
           width: '100%',
-          maxWidth: '440px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.6)',
+          maxWidth: '400px',
+          boxShadow: 'var(--shadow-lg)',
           overflow: 'hidden',
           display: 'flex',
           flexDirection: 'column',
-          animation: 'scaleUp 0.25s cubic-bezier(0.16, 1, 0.3, 1)'
         }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -110,7 +110,7 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
           alignItems: 'center',
           justifyContent: 'space-between',
           padding: '1.25rem 1.5rem',
-          borderBottom: '1px solid var(--border)',
+          borderBottom: '1px solid var(--card-border)',
           background: 'rgba(255, 255, 255, 0.02)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
@@ -118,9 +118,9 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
               width: '8px',
               height: '8px',
               borderRadius: '50%',
-              backgroundColor: isInvest ? 'var(--danger)' : 'var(--success)'
+              backgroundColor: isInvest ? 'var(--error)' : 'var(--success)'
             }} />
-            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 600, color: 'var(--text)' }}>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--foreground)' }}>
               Transaction Details
             </h3>
           </div>
@@ -132,11 +132,9 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
               color: 'var(--muted)',
               cursor: 'pointer',
               padding: '0.4rem',
-              borderRadius: '0.5rem',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              transition: 'all 0.2s ease'
             }}
           >
             <X size={20} />
@@ -148,10 +146,10 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
           {loading ? (
             <div style={{ padding: '3rem 0', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.75rem', color: 'var(--muted)' }}>
               <Loader2 size={32} className="animate-spin" style={{ color: 'var(--primary)' }} />
-              <span style={{ fontSize: '0.9rem' }}>Loading transaction details...</span>
+              <span style={{ fontSize: '0.9rem' }}>Loading transaction...</span>
             </div>
           ) : error ? (
-            <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--danger)', fontSize: '0.95rem' }}>
+            <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--error)', fontSize: '0.95rem' }}>
               {error}
             </div>
           ) : txData ? (
@@ -160,9 +158,9 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
               <div style={{
                 textAlign: 'center',
                 padding: '1.25rem 1rem',
-                borderRadius: '1rem',
-                background: isInvest ? 'rgba(239, 68, 68, 0.08)' : 'rgba(16, 185, 129, 0.08)',
-                border: `1px solid ${isInvest ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)'}`
+                borderRadius: 'var(--radius-md)',
+                background: isInvest ? 'var(--error-bg)' : 'rgba(16, 185, 129, 0.1)',
+                border: `1px solid ${isInvest ? 'var(--error-border)' : 'rgba(16, 185, 129, 0.2)'}`
               }}>
                 <div style={{
                   display: 'inline-flex',
@@ -175,8 +173,8 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
                   letterSpacing: '0.05em',
                   textTransform: 'uppercase',
                   marginBottom: '0.6rem',
-                  background: isInvest ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-                  color: isInvest ? 'var(--danger)' : 'var(--success)'
+                  background: isInvest ? 'rgba(244, 63, 94, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                  color: isInvest ? 'var(--error)' : 'var(--success)'
                 }}>
                   {isInvest ? <ArrowDownRight size={14} /> : <ArrowUpRight size={14} />}
                   {isInvest ? 'INVESTMENT (-)' : 'CASH COLLECTION (+)'}
@@ -186,7 +184,7 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
                   fontSize: '2rem',
                   fontWeight: 800,
                   letterSpacing: '-0.02em',
-                  color: isInvest ? 'var(--danger)' : 'var(--success)',
+                  color: isInvest ? 'var(--error)' : 'var(--success)',
                   lineHeight: 1.1
                 }}>
                   ₹ {parseFloat(txData.amount || 0).toLocaleString('en-IN')}
@@ -195,18 +193,18 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
 
               {/* Information Grid */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
-                {/* Partner / Logger */}
+                {/* Partner */}
                 <div style={{
                   padding: '0.85rem 1rem',
-                  borderRadius: '0.75rem',
+                  borderRadius: 'var(--radius-sm)',
                   background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid var(--border)'
+                  border: '1px solid var(--card-border)'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--muted)', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
                     <User size={13} />
                     <span>Logged By</span>
                   </div>
-                  <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text)' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--foreground)' }}>
                     {txData.username || 'Partner'}
                   </div>
                 </div>
@@ -214,15 +212,15 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
                 {/* Date */}
                 <div style={{
                   padding: '0.85rem 1rem',
-                  borderRadius: '0.75rem',
+                  borderRadius: 'var(--radius-sm)',
                   background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid var(--border)'
+                  border: '1px solid var(--card-border)'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--muted)', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
                     <Calendar size={13} />
                     <span>Entry Date</span>
                   </div>
-                  <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--text)' }}>
+                  <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--foreground)' }}>
                     {formatDate(txData.date)}
                   </div>
                 </div>
@@ -231,9 +229,9 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
               {/* Notes / Narration */}
               <div style={{
                 padding: '1rem',
-                borderRadius: '0.75rem',
+                borderRadius: 'var(--radius-sm)',
                 background: 'rgba(255, 255, 255, 0.02)',
-                border: '1px solid var(--border)',
+                border: '1px solid var(--card-border)',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '0.4rem'
@@ -244,7 +242,7 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
                 </div>
                 <div style={{
                   fontSize: '0.95rem',
-                  color: 'var(--text)',
+                  color: 'var(--foreground)',
                   lineHeight: '1.5',
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word',
@@ -281,40 +279,23 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
         {/* Footer Actions */}
         <div style={{
           padding: '1rem 1.5rem',
-          borderTop: '1px solid var(--border)',
+          borderTop: '1px solid var(--card-border)',
           display: 'flex',
           justifyContent: 'flex-end',
           background: 'rgba(255, 255, 255, 0.01)'
         }}>
           <button
             onClick={onClose}
+            className="btn btn-primary"
             style={{
               width: '100%',
-              padding: '0.75rem',
-              borderRadius: '0.75rem',
-              border: 'none',
-              background: 'var(--primary)',
-              color: '#ffffff',
-              fontWeight: 600,
-              fontSize: '0.95rem',
-              cursor: 'pointer',
-              transition: 'opacity 0.2s ease'
+              margin: 0
             }}
           >
             Close Details
           </button>
         </div>
       </div>
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to { opacity: 1; }
-        }
-        @keyframes scaleUp {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-      `}</style>
     </div>
   )
 }
