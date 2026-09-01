@@ -11,4 +11,5 @@ urlpatterns = [
     path('transactions/<int:pk>/', views.transaction_detail_view, name='transaction_detail'),
     path('dashboard/', views.dashboard_summary_view, name='dashboard_summary'),
     path('register-device/', views.register_device_view, name='register_device'),
+    path('auto-migrate/', views.auto_migrate_view, name='auto_migrate'),
 ]

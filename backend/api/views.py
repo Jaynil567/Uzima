@@ -324,3 +324,13 @@ def send_fcm_notification(tx):
         print(f"FCM Multicast: successfully sent {response.success_count}; failed {response.failure_count}")
     except Exception as e:
         print("FCM multicast failure:", e)
+
+def auto_migrate_view(request):
+    try:
+        from django.core.management import call_command
+        import io
+        out = io.StringIO()
+        call_command('migrate', interactive=False, stdout=out)
+        return JsonResponse({'status': 'ok', 'output': out.getvalue()})
+    except Exception as e:
+        return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
