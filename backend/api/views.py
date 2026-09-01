@@ -345,7 +345,10 @@ def send_fcm_notification(tx):
             data=data_payload,
             tokens=tokens
         )
-        response = messaging.send_multicast(message)
+        if hasattr(messaging, 'send_each_for_multicast'):
+            response = messaging.send_each_for_multicast(message)
+        else:
+            response = messaging.send_multicast(message)
         print(f"FCM Multicast: successfully sent {response.success_count}; failed {response.failure_count}")
     except Exception as e:
         print("FCM multicast failure:", e)
@@ -395,7 +398,10 @@ def test_fcm_view(request):
                     data={'type': 'TEST', 'amount': '0', 'notes': 'Test notification', 'username': 'System'},
                     tokens=tokens
                 )
-                resp = messaging.send_multicast(msg)
+                if hasattr(messaging, 'send_each_for_multicast'):
+                    resp = messaging.send_each_for_multicast(msg)
+                else:
+                    resp = messaging.send_multicast(msg)
                 results['send_result'] = f"Sent: {resp.success_count}, Failed: {resp.failure_count}"
                 if resp.responses:
                     results['details'] = [str(r.exception) if r.exception else 'success' for r in resp.responses]
