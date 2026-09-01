@@ -33,7 +33,7 @@ try:
                 firebase_admin.initialize_app(cred)
             else:
                 # 3. Try local file path (e.g. firebase-service-account.json)
-                local_cred = os.path.join(settings.BASE_DIR, 'firebase-service-account.json')
+                local_cred = os.path.join(settings.BASE_DIR, 'etc/secrets/firebase-service-account.json')
                 if os.path.exists(local_cred):
                     cred = credentials.Certificate(local_cred)
                     firebase_admin.initialize_app(cred)
