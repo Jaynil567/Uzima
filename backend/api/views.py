@@ -306,7 +306,12 @@ def send_fcm_notification(tx):
         devices = Device.objects.exclude(user=tx.user)
         tokens = [d.token for d in devices if d.token]
         if not tokens:
+            print("No recipient device tokens registered.")
             return
+
+        display_type = "Investment (-)" if tx.type == "INVEST" else "Cash Collection (+)"
+        notification_title = "New Transaction Logged"
+        notification_body = f"{display_type} of ₹{tx.amount} for: {tx.notes} (by {tx.user.username})"
 
         data_payload = {
             'type': tx.type,
@@ -315,8 +320,28 @@ def send_fcm_notification(tx):
             'username': tx.user.username
         }
 
-        # Dispatch multicast push messages
+        # High-priority Android notification configuration for background delivery
+        android_config = messaging.AndroidConfig(
+            priority='high',
+            notification=messaging.AndroidNotification(
+                title=notification_title,
+                body=notification_body,
+                sound='uzima',
+                channel_id='uzima_voice_alerts_v3',
+                priority='max',
+                default_vibrate_timings=True
+            )
+        )
+
+        notification_payload = messaging.Notification(
+            title=notification_title,
+            body=notification_body
+        )
+
+        # Dispatch multicast push messages with full Android notification payload
         message = messaging.MulticastMessage(
+            notification=notification_payload,
+            android=android_config,
             data=data_payload,
             tokens=tokens
         )
@@ -334,3 +359,47 @@ def auto_migrate_view(request):
         return JsonResponse({'status': 'ok', 'output': out.getvalue()})
     except Exception as e:
         return JsonResponse({'status': 'error', 'error': str(e)}, status=500)
+
+def test_fcm_view(request):
+    results = {
+        'firebase_apps_count': len(firebase_admin._apps) if hasattr(firebase_admin, '_apps') else 0,
+        'has_firebase_env': bool(os.environ.get('FIREBASE_SERVICE_ACCOUNT_JSON') or os.environ.get('GOOGLE_APPLICATION_CREDENTIALS')),
+        'devices_count': Device.objects.count(),
+        'devices': []
+    }
+    
+    for d in Device.objects.all()[:10]:
+        results['devices'].append({
+            'user': d.user.username,
+            'token_preview': f"{d.token[:12]}...{d.token[-8:]}" if len(d.token) > 20 else d.token,
+            'updated_at': d.updated_at.isoformat()
+        })
+        
+    if request.GET.get('send') == '1':
+        tokens = [d.token for d in Device.objects.all() if d.token]
+        if not tokens:
+            results['send_result'] = 'No device tokens found to send to'
+        else:
+            try:
+                msg = messaging.MulticastMessage(
+                    notification=messaging.Notification(title="Uzima Test Push", body="Testing Firebase Background Push Notification"),
+                    android=messaging.AndroidConfig(
+                        priority='high',
+                        notification=messaging.AndroidNotification(
+                            sound='uzima',
+                            channel_id='uzima_voice_alerts_v3',
+                            priority='max',
+                            default_vibrate_timings=True
+                        )
+                    ),
+                    data={'type': 'TEST', 'amount': '0', 'notes': 'Test notification', 'username': 'System'},
+                    tokens=tokens
+                )
+                resp = messaging.send_multicast(msg)
+                results['send_result'] = f"Sent: {resp.success_count}, Failed: {resp.failure_count}"
+                if resp.responses:
+                    results['details'] = [str(r.exception) if r.exception else 'success' for r in resp.responses]
+            except Exception as e:
+                results['send_error'] = str(e)
+                
+    return JsonResponse(results)

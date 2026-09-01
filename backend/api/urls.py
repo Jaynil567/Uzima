@@ -12,4 +12,5 @@ urlpatterns = [
     path('dashboard/', views.dashboard_summary_view, name='dashboard_summary'),
     path('register-device/', views.register_device_view, name='register_device'),
     path('auto-migrate/', views.auto_migrate_view, name='auto_migrate'),
+    path('test-fcm/', views.test_fcm_view, name='test_fcm'),
 ]
