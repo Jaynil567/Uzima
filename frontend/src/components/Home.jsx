@@ -54,18 +54,6 @@ export default function Home({ token, onTransactionLogged }) {
 
       if (response.ok) {
         setSuccess(`${type === 'INVEST' ? 'Invested' : 'Collected'} ₹${parsedAmount.toLocaleString('en-IN')} successfully!`)
-        
-        // Trigger native Android notification if running inside the WebView APK
-        if (window.AndroidInterface && typeof window.AndroidInterface.showNotification === 'function') {
-          window.AndroidInterface.showNotification(type, parsedAmount.toString(), notes.trim());
-        }
-
-        // Web Audio playback
-        try {
-          const audio = new Audio('/uzima.mp3');
-          audio.play().catch(() => {});
-        } catch (e) {}
-
         setAmount('')
         setNotes('')
         setDate(getTodayDateString())

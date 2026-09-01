@@ -113,68 +113,6 @@ export default function App() {
     setActiveScreen('history')
   }
 
-  // Real-time polling for new transactions from other users
-  useEffect(() => {
-    if (!token || !user) return
-
-    let lastSeenId = parseInt(localStorage.getItem('last_seen_tx_id') || '0', 10)
-
-    const pollTransactions = async () => {
-      try {
-        const response = await fetch(getBackendUrl('/api/transactions/'), {
-          headers: {
-            'Authorization': `Token ${token}`,
-          },
-        })
-        if (!response.ok) return
-        const data = await response.json()
-        
-        if (data && data.transactions && data.transactions.length > 0) {
-          const sortedTxs = [...data.transactions].sort((a, b) => a.id - b.id)
-          const maxId = sortedTxs[sortedTxs.length - 1].id
-
-          if (lastSeenId === 0) {
-            lastSeenId = maxId
-            localStorage.setItem('last_seen_tx_id', maxId.toString())
-            return
-          }
-
-          if (maxId > lastSeenId) {
-            const newEntries = sortedTxs.filter(tx => tx.id > lastSeenId)
-            
-            newEntries.forEach(tx => {
-              if (tx.user_id !== user.id) {
-                if (window.AndroidInterface && typeof window.AndroidInterface.showNotification === 'function') {
-                  window.AndroidInterface.showNotification(
-                    tx.type, 
-                    tx.amount.toString(), 
-                    tx.notes + " (by " + tx.username + ")"
-                  )
-                }
-
-                // Play voice audio
-                try {
-                  const audio = new Audio('/uzima.mp3');
-                  audio.play().catch(() => {});
-                } catch (e) {}
-              }
-            })
-
-            lastSeenId = maxId
-            localStorage.setItem('last_seen_tx_id', maxId.toString())
-          }
-        }
-      } catch (err) {
-        console.error("Polling error:", err)
-      }
-    }
-
-    pollTransactions()
-    const interval = setInterval(pollTransactions, 10000)
-
-    return () => clearInterval(interval)
-  }, [token, user])
-
   if (checkingAuth) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem', color: 'var(--muted)' }}>
