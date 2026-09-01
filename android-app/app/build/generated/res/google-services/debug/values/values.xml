@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="gcm_defaultSenderId" translatable="false">167926844883</string>
+    <string name="google_api_key" translatable="false">AIzaSyAuBLwiKqk6uLJ5Jp4nMk090kMOoEgcoqg</string>
+    <string name="google_app_id" translatable="false">1:167926844883:android:d186266c3f3ae1792c3326</string>
+    <string name="google_crash_reporting_api_key" translatable="false">AIzaSyAuBLwiKqk6uLJ5Jp4nMk090kMOoEgcoqg</string>
+    <string name="google_storage_bucket" translatable="false">uzima-hisab-142b9.firebasestorage.app</string>
+    <string name="project_id" translatable="false">uzima-hisab-142b9</string>
+</resources>

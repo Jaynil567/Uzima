@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "167926844883",
+    "project_id": "uzima-hisab-142b9",
+    "storage_bucket": "uzima-hisab-142b9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:167926844883:android:d186266c3f3ae1792c3326",
+        "android_client_info": {
+          "package_name": "com.uzimahisab.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAuBLwiKqk6uLJ5Jp4nMk090kMOoEgcoqg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

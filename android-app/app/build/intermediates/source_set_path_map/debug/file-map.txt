@@ -1,0 +1,37 @@
+com.uzimahisab.app-firebase-messaging-23.1.2-0 C:\Users\wwwbh\.gradle\caches\transforms-3\02300bd8024382a0905f3fc2f3fabc49\transformed\firebase-messaging-23.1.2\res
+com.uzimahisab.app-coordinatorlayout-1.1.0-1 C:\Users\wwwbh\.gradle\caches\transforms-3\0950b9f90cb4efbf0e9eb3007be1e886\transformed\coordinatorlayout-1.1.0\res
+com.uzimahisab.app-lifecycle-livedata-core-2.5.1-2 C:\Users\wwwbh\.gradle\caches\transforms-3\09f40a92eedbb1ca90660c13e06cc224\transformed\lifecycle-livedata-core-2.5.1\res
+com.uzimahisab.app-firebase-common-20.3.1-3 C:\Users\wwwbh\.gradle\caches\transforms-3\0a3b8f34785215012772c58a530e5b12\transformed\firebase-common-20.3.1\res
+com.uzimahisab.app-appcompat-1.6.1-4 C:\Users\wwwbh\.gradle\caches\transforms-3\0d7fe19e4a979c4220dd789a74cc854c\transformed\appcompat-1.6.1\res
+com.uzimahisab.app-startup-runtime-1.1.1-5 C:\Users\wwwbh\.gradle\caches\transforms-3\10a9796f538286c49837c2bdca6e3b57\transformed\startup-runtime-1.1.1\res
+com.uzimahisab.app-drawerlayout-1.1.1-6 C:\Users\wwwbh\.gradle\caches\transforms-3\2566d32e1a426064eb75378308b365e1\transformed\drawerlayout-1.1.1\res
+com.uzimahisab.app-transition-1.2.0-7 C:\Users\wwwbh\.gradle\caches\transforms-3\2aa9e85e2a2e5ac0c6ae6ea96006ff87\transformed\transition-1.2.0\res
+com.uzimahisab.app-core-ktx-1.9.0-8 C:\Users\wwwbh\.gradle\caches\transforms-3\2bf871d7f04a98c707ac3fa49f5bb7d0\transformed\core-ktx-1.9.0\res
+com.uzimahisab.app-material-1.8.0-9 C:\Users\wwwbh\.gradle\caches\transforms-3\2ccfa433fd3ff80cbd6904ae645058a2\transformed\material-1.8.0\res
+com.uzimahisab.app-recyclerview-1.1.0-10 C:\Users\wwwbh\.gradle\caches\transforms-3\3c2680b277dd3992dc4471e151a2aa6b\transformed\recyclerview-1.1.0\res
+com.uzimahisab.app-constraintlayout-2.1.4-11 C:\Users\wwwbh\.gradle\caches\transforms-3\3dda3f021586273587a23514232f9b76\transformed\constraintlayout-2.1.4\res
+com.uzimahisab.app-emoji2-views-helper-1.2.0-12 C:\Users\wwwbh\.gradle\caches\transforms-3\4072bdd6dbdfd3cd3ffe2f7f07cd73d7\transformed\emoji2-views-helper-1.2.0\res
+com.uzimahisab.app-viewpager2-1.0.0-13 C:\Users\wwwbh\.gradle\caches\transforms-3\57f87b9d44e9c12cc6b9224a6b5fd17a\transformed\viewpager2-1.0.0\res
+com.uzimahisab.app-lifecycle-viewmodel-2.5.1-14 C:\Users\wwwbh\.gradle\caches\transforms-3\581822bdf7f64bcd5bc5cc17be546671\transformed\lifecycle-viewmodel-2.5.1\res
+com.uzimahisab.app-play-services-base-18.0.1-15 C:\Users\wwwbh\.gradle\caches\transforms-3\630396a28e91ee5dd7d554172cf96e34\transformed\play-services-base-18.0.1\res
+com.uzimahisab.app-lifecycle-process-2.4.1-16 C:\Users\wwwbh\.gradle\caches\transforms-3\68ad3af730c018f5770be6d6fb9c1dd1\transformed\lifecycle-process-2.4.1\res
+com.uzimahisab.app-emoji2-1.2.0-17 C:\Users\wwwbh\.gradle\caches\transforms-3\860ac5c082eb9896f0c71c2a8120571a\transformed\emoji2-1.2.0\res
+com.uzimahisab.app-annotation-experimental-1.3.0-18 C:\Users\wwwbh\.gradle\caches\transforms-3\8dc1d7fb312499025c547a91756fa493\transformed\annotation-experimental-1.3.0\res
+com.uzimahisab.app-lifecycle-runtime-2.5.1-19 C:\Users\wwwbh\.gradle\caches\transforms-3\9e981a8a7d6100e50a1190f77a61605c\transformed\lifecycle-runtime-2.5.1\res
+com.uzimahisab.app-appcompat-resources-1.6.1-20 C:\Users\wwwbh\.gradle\caches\transforms-3\a0dc1745d64a3e4b27a32868e0174d12\transformed\appcompat-resources-1.6.1\res
+com.uzimahisab.app-core-1.9.0-21 C:\Users\wwwbh\.gradle\caches\transforms-3\ad05760a2332724b5ccd6c6a3a4b06f3\transformed\core-1.9.0\res
+com.uzimahisab.app-activity-1.6.0-22 C:\Users\wwwbh\.gradle\caches\transforms-3\c8261258a6da48ce6b235e714b276bd0\transformed\activity-1.6.0\res
+com.uzimahisab.app-cardview-1.0.0-23 C:\Users\wwwbh\.gradle\caches\transforms-3\d0d6b6fb0dbfcf6bea335d683b6d3137\transformed\cardview-1.0.0\res
+com.uzimahisab.app-savedstate-1.2.0-24 C:\Users\wwwbh\.gradle\caches\transforms-3\d4fe4ba80053b7010a630997e7e90425\transformed\savedstate-1.2.0\res
+com.uzimahisab.app-fragment-1.3.6-25 C:\Users\wwwbh\.gradle\caches\transforms-3\dcb9b95a9b8b05ac18df599b18f3e90e\transformed\fragment-1.3.6\res
+com.uzimahisab.app-lifecycle-viewmodel-savedstate-2.5.1-26 C:\Users\wwwbh\.gradle\caches\transforms-3\e4d7cc1154f28e81213d841a4a4af1ae\transformed\lifecycle-viewmodel-savedstate-2.5.1\res
+com.uzimahisab.app-play-services-basement-18.1.0-27 C:\Users\wwwbh\.gradle\caches\transforms-3\f69811667f9d4220f2adadceef33a2ed\transformed\play-services-basement-18.1.0\res
+com.uzimahisab.app-google-services-28 E:\Uzima Hisab\android-app\app\build\generated\res\google-services\debug
+com.uzimahisab.app-pngs-29 E:\Uzima Hisab\android-app\app\build\generated\res\pngs\debug
+com.uzimahisab.app-resValues-30 E:\Uzima Hisab\android-app\app\build\generated\res\resValues\debug
+com.uzimahisab.app-rs-31 E:\Uzima Hisab\android-app\app\build\generated\res\rs\debug
+com.uzimahisab.app-mergeDebugResources-32 E:\Uzima Hisab\android-app\app\build\intermediates\incremental\debug\mergeDebugResources\merged.dir
+com.uzimahisab.app-mergeDebugResources-33 E:\Uzima Hisab\android-app\app\build\intermediates\incremental\debug\mergeDebugResources\stripped.dir
+com.uzimahisab.app-merged_res-34 E:\Uzima Hisab\android-app\app\build\intermediates\merged_res\debug
+com.uzimahisab.app-debug-35 E:\Uzima Hisab\android-app\app\src\debug\res
+com.uzimahisab.app-main-36 E:\Uzima Hisab\android-app\app\src\main\res
