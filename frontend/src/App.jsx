@@ -151,6 +151,12 @@ export default function App() {
                     tx.notes + " (by " + tx.username + ")"
                   )
                 }
+
+                // Play voice audio
+                try {
+                  const audio = new Audio('/uzima.mp3');
+                  audio.play().catch(() => {});
+                } catch (e) {}
               }
             })
 

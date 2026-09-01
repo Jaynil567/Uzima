@@ -60,6 +60,12 @@ export default function Home({ token, onTransactionLogged }) {
           window.AndroidInterface.showNotification(type, parsedAmount.toString(), notes.trim());
         }
 
+        // Web Audio playback
+        try {
+          const audio = new Audio('/uzima.mp3');
+          audio.play().catch(() => {});
+        } catch (e) {}
+
         setAmount('')
         setNotes('')
         setDate(getTodayDateString())
