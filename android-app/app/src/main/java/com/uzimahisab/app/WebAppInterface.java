@@ -58,6 +58,15 @@ public class WebAppInterface {
         SoundHelper.playUzimaSound(context);
     }
 
+    @JavascriptInterface
+    public String getPendingTxId() {
+        String txId = context.getSharedPreferences("UzimaPrefs", Context.MODE_PRIVATE).getString("pending_tx_id", "");
+        if (!txId.isEmpty()) {
+            context.getSharedPreferences("UzimaPrefs", Context.MODE_PRIVATE).edit().remove("pending_tx_id").apply();
+        }
+        return txId;
+    }
+
     private void createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             NotificationManager manager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);

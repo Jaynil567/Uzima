@@ -2,8 +2,10 @@ package com.uzimahisab.app;
 
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.media.AudioAttributes;
 import android.net.Uri;
 import android.os.Build;
@@ -35,23 +37,44 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
 
         String title = "New Transaction Logged";
         String message = "";
+        String txId = "";
 
-        if (remoteMessage.getNotification() != null) {
-            title = remoteMessage.getNotification().getTitle();
-            message = remoteMessage.getNotification().getBody();
-        } else if (remoteMessage.getData().size() > 0) {
+        if (remoteMessage.getData().size() > 0) {
             String type = remoteMessage.getData().get("type");
             String amount = remoteMessage.getData().get("amount");
             String notes = remoteMessage.getData().get("notes");
             String username = remoteMessage.getData().get("username");
+            txId = remoteMessage.getData().get("tx_id");
 
             String displayType = "INVEST".equals(type) ? "Investment (-)" : "Cash Collection (+)";
             message = displayType + " of ₹" + amount + " for: " + notes + " (by " + username + ")";
+        } else if (remoteMessage.getNotification() != null) {
+            title = remoteMessage.getNotification().getTitle();
+            message = remoteMessage.getNotification().getBody();
         }
 
         if (message == null || message.isEmpty()) return;
 
         Uri soundUri = Uri.parse(ContentResolver.SCHEME_ANDROID_RESOURCE + "://" + getPackageName() + "/" + R.raw.uzima);
+
+        // Open app and navigate to transaction on click
+        Intent intent = new Intent(this, MainActivity.class);
+        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        if (txId != null && !txId.isEmpty()) {
+            intent.putExtra("tx_id", txId);
+        }
+
+        int flags = PendingIntent.FLAG_UPDATE_CURRENT;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            flags |= PendingIntent.FLAG_IMMUTABLE;
+        }
+
+        PendingIntent pendingIntent = PendingIntent.getActivity(
+            this,
+            (int) System.currentTimeMillis(),
+            intent,
+            flags
+        );
 
         NotificationCompat.Builder builder = new NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_dialog_info)
@@ -61,6 +84,7 @@ public class MyFirebaseMessagingService extends FirebaseMessagingService {
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setSound(soundUri)
             .setVibrate(new long[]{0, 300, 200, 300})
+            .setContentIntent(pendingIntent)
             .setAutoCancel(true);
 
         notificationManager.notify((int) System.currentTimeMillis(), builder.build());

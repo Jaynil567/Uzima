@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Calendar, Trash2, Edit, X, Loader2, AlertCircle, TrendingUp, TrendingDown, IndianRupee } from 'lucide-react'
 import { getBackendUrl } from '../utils/api'
 
-export default function History({ userId, username, token, currentUserId, onDataChanged }) {
+export default function History({ userId, username, token, currentUserId, onDataChanged, onSelectTransaction }) {
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -208,7 +208,8 @@ export default function History({ userId, username, token, currentUserId, onData
                     <div 
                       key={tx.id} 
                       className={`history-item ${isInvest ? 'type-expense' : 'type-income'}`}
-                      style={{ padding: '0.85rem 1rem' }}
+                      style={{ padding: '0.85rem 1rem', cursor: 'pointer' }}
+                      onClick={() => onSelectTransaction && onSelectTransaction(tx)}
                     >
                       <div className="history-info">
                         <span className="history-desc">{tx.notes}</span>
@@ -227,14 +228,20 @@ export default function History({ userId, username, token, currentUserId, onData
                             <button 
                               className="btn btn-primary btn-sm"
                               style={{ padding: '0.35rem', background: 'rgba(147, 51, 234, 0.1)', border: '1px solid var(--card-border-glow)', color: '#c084fc' }}
-                              onClick={() => openEditModal(tx)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                openEditModal(tx)
+                              }}
                             >
                               <Edit size={12} />
                             </button>
                             <button 
                               className="btn btn-danger btn-sm"
                               style={{ padding: '0.35rem' }}
-                              onClick={() => handleDelete(tx.id)}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleDelete(tx.id)
+                              }}
                             >
                               <Trash2 size={12} />
                             </button>

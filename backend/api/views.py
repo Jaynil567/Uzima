@@ -189,7 +189,7 @@ def transaction_list_create_view(request):
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view(['PUT', 'DELETE'])
+@api_view(['GET', 'PUT', 'DELETE'])
 @authentication_classes([TokenAuthentication])
 @permission_classes([IsAuthenticated])
 def transaction_detail_view(request, pk):
@@ -197,6 +197,20 @@ def transaction_detail_view(request, pk):
         t = Transaction.objects.get(pk=pk)
     except Transaction.DoesNotExist:
         return Response({'error': 'Transaction not found'}, status=status.HTTP_404_NOT_FOUND)
+
+    if request.method == 'GET':
+        return Response({
+            'transaction': {
+                'id': t.id,
+                'user_id': t.user.id,
+                'username': t.user.username,
+                'type': t.type,
+                'amount': float(t.amount),
+                'notes': t.notes,
+                'date': t.date.isoformat(),
+                'updated_at': t.updated_at.isoformat()
+            }
+        }, status=status.HTTP_200_OK)
         
     # Security: Only owner can edit/delete their own transaction
     if t.user != request.user:
@@ -314,6 +328,7 @@ def send_fcm_notification(tx):
         notification_body = f"{display_type} of ₹{tx.amount} for: {tx.notes} (by {tx.user.username})"
 
         data_payload = {
+            'tx_id': str(tx.id),
             'type': tx.type,
             'amount': str(tx.amount),
             'notes': tx.notes,

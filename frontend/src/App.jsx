@@ -5,6 +5,7 @@ import Home from './components/Home'
 import History from './components/History'
 import Dashboard from './components/Dashboard'
 import CombineHistory from './components/CombineHistory'
+import TransactionDetailModal from './components/TransactionDetailModal'
 import { Loader2, PlusCircle, Calendar, LayoutDashboard, FileText, LogOut } from 'lucide-react'
 import { getBackendUrl } from './utils/api'
 
@@ -17,8 +18,9 @@ export default function App() {
   // App routing navigation view: 'home' | 'history' | 'dashboard' | 'combine'
   const [activeScreen, setActiveScreen] = useState('home')
   const [selectedHistoryUser, setSelectedHistoryUser] = useState(null)
-
-
+  
+  // Transaction detail modal state
+  const [selectedTxForModal, setSelectedTxForModal] = useState(null)
 
   // Validate session on mount
   useEffect(() => {
@@ -90,6 +92,28 @@ export default function App() {
     return () => clearTimeout(timeout)
   }, [token])
 
+  // Handle Android notification click deep-link to open transaction details
+  useEffect(() => {
+    // 1. Register global JS function called by Android on notification tap
+    window.handleNotificationClick = (txId) => {
+      if (txId) {
+        setSelectedTxForModal({ id: txId })
+      }
+    }
+
+    // 2. Check for pending transaction on initial load
+    if (window.AndroidInterface && typeof window.AndroidInterface.getPendingTxId === 'function') {
+      const pendingId = window.AndroidInterface.getPendingTxId()
+      if (pendingId) {
+        setSelectedTxForModal({ id: pendingId })
+      }
+    }
+
+    return () => {
+      window.handleNotificationClick = null
+    }
+  }, [token])
+
   const handleLoginSuccess = (newToken, loggedInUser) => {
     setToken(newToken)
     setUser(loggedInUser)
@@ -103,6 +127,7 @@ export default function App() {
     setToken(null)
     setUser(null)
     setSelectedHistoryUser(null)
+    setSelectedTxForModal(null)
     localStorage.removeItem('auth_token')
     localStorage.removeItem('auth_user')
     setCurrentView('login')
@@ -129,59 +154,65 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell animate-fade-in">
-      {token ? (
+    <div className="shell">
+      {token && user ? (
         <>
-          {/* Top Bar Header */}
+          {/* Top Brand Header */}
           <header className="shell-header">
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#c084fc', margin: 0 }}>Uzima Hisab</h2>
-            <button 
-              onClick={handleLogoutSuccess} 
-              className="btn btn-sm" 
-              style={{ 
-                width: 'auto', 
-                background: 'rgba(255, 255, 255, 0.03)', 
-                border: '1px solid var(--card-border)', 
-                color: 'var(--muted)', 
-                fontSize: '0.7rem', 
-                padding: '0.4rem 0.8rem',
-                margin: 0
-              }}
-            >
-              <LogOut size={12} style={{ marginRight: '0.25rem' }} /> Log Out
-            </button>
+            <div className="shell-header-left">
+              <div className="brand-logo">
+                <span className="brand-logo-text">UZIMA</span>
+              </div>
+              <span className="brand-subtitle">Hisab</span>
+            </div>
+
+            <div className="shell-header-right">
+              <div className="user-badge">
+                <span className="user-dot"></span>
+                <span className="user-name">{user.username}</span>
+              </div>
+              <button 
+                className="btn-logout" 
+                onClick={handleLogoutSuccess}
+                title="Log out session"
+              >
+                <LogOut size={16} />
+              </button>
+            </div>
           </header>
 
-          {/* Independent scroll content block */}
-          <main className="scrollable-content">
+          {/* Main Screens View Area */}
+          <main className="shell-body">
             {activeScreen === 'home' && (
               <Home 
                 token={token} 
                 onTransactionLogged={() => {}} 
               />
             )}
-            
+
             {activeScreen === 'history' && selectedHistoryUser && (
               <History 
-                userId={selectedHistoryUser.id}
-                username={selectedHistoryUser.username}
-                token={token}
-                currentUserId={user?.id}
+                key={selectedHistoryUser.id}
+                userId={selectedHistoryUser.id} 
+                username={selectedHistoryUser.username} 
+                token={token} 
+                currentUserId={user.id}
                 onDataChanged={() => {}}
+                onSelectTransaction={(tx) => setSelectedTxForModal(tx)}
               />
             )}
 
             {activeScreen === 'dashboard' && (
               <Dashboard 
                 token={token} 
-                onUserClick={navigateToUserHistory}
-                onCombineHistoryClick={() => setActiveScreen('combine')}
+                onNavigateToHistory={navigateToUserHistory}
               />
             )}
 
             {activeScreen === 'combine' && (
               <CombineHistory 
                 token={token} 
+                onSelectTransaction={(tx) => setSelectedTxForModal(tx)}
               />
             )}
           </main>
@@ -223,6 +254,16 @@ export default function App() {
               <span>Combine</span>
             </button>
           </nav>
+
+          {/* Dedicated Transaction Detail Modal View */}
+          {selectedTxForModal && (
+            <TransactionDetailModal 
+              transaction={selectedTxForModal.date ? selectedTxForModal : null}
+              txId={selectedTxForModal.id}
+              token={token}
+              onClose={() => setSelectedTxForModal(null)}
+            />
+          )}
         </>
       ) : (
         <div className="auth-container">

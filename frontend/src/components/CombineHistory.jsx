@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Calendar, Search, Filter, Loader2, AlertCircle, RefreshCw } from 'lucide-react'
 import { getBackendUrl } from '../utils/api'
 
-export default function CombineHistory({ token }) {
+export default function CombineHistory({ token, onSelectTransaction }) {
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -177,7 +177,8 @@ export default function CombineHistory({ token }) {
               <div 
                 key={tx.id} 
                 className={`history-item ${isInvest ? 'type-expense' : 'type-income'}`}
-                style={{ padding: '0.85rem 1rem' }}
+                style={{ padding: '0.85rem 1rem', cursor: 'pointer' }}
+                onClick={() => onSelectTransaction && onSelectTransaction(tx)}
               >
                 <div className="history-info">
                   <span className="history-desc">{tx.notes}</span>

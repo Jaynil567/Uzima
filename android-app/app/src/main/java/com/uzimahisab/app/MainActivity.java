@@ -1,6 +1,7 @@
 package com.uzimahisab.app;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.os.Build;
 import android.os.Bundle;
@@ -44,15 +45,40 @@ public class MainActivity extends AppCompatActivity {
         // Delegate standard JS alert/confirm dialog supports to our CustomWebChromeClient
         webView.setWebChromeClient(new CustomWebChromeClient(this));
 
-        // Bind JavaScript Interface for transaction notifications
+        // Bind JavaScript Interface for transaction notifications and deep links
         webView.addJavascriptInterface(new WebAppInterface(this), "AndroidInterface");
 
         // Retrieve and cache current Firebase Messaging token
         com.google.firebase.messaging.FirebaseMessaging.getInstance().getToken()
             .addOnCompleteListener(new FcmTokenListener(this));
 
+        // Handle notification click intent on cold start
+        handleNotificationIntent(getIntent());
+
         // Load the deployed frontend vercel URL
         webView.loadUrl("https://uzima-yzmc.vercel.app/");
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        handleNotificationIntent(intent);
+    }
+
+    private void handleNotificationIntent(Intent intent) {
+        if (intent != null && intent.hasExtra("tx_id")) {
+            String txId = intent.getStringExtra("tx_id");
+            if (txId != null && !txId.isEmpty()) {
+                getSharedPreferences("UzimaPrefs", MODE_PRIVATE)
+                    .edit()
+                    .putString("pending_tx_id", txId)
+                    .apply();
+                if (webView != null) {
+                    webView.evaluateJavascript("if (window.handleNotificationClick) { window.handleNotificationClick('" + txId + "'); }", null);
+                }
+            }
+        }
     }
 
     // Capture back button press to navigate back inside web view history instead of exiting app
