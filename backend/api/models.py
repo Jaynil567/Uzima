@@ -7,6 +7,7 @@ class Transaction(models.Model):
     TRANSACTION_TYPES = (
         ('INVEST', 'Investment'),
         ('COLLECT', 'Cash Collection'),
+        ('WITHDRAW', 'Withdrawal'),
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='transactions')
     type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)

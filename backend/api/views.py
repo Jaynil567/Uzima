@@ -150,7 +150,7 @@ def transaction_list_create_view(request):
         amount = request.data.get('amount')
         notes = request.data.get('notes')
         
-        if tx_type not in ['INVEST', 'COLLECT']:
+        if tx_type not in ['INVEST', 'COLLECT', 'WITHDRAW']:
             return Response({'error': 'Invalid transaction type'}, status=status.HTTP_400_BAD_REQUEST)
         if not amount or float(amount) <= 0:
             return Response({'error': 'Valid positive amount is required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -221,7 +221,7 @@ def transaction_detail_view(request, pk):
         amount = request.data.get('amount')
         notes = request.data.get('notes')
         
-        if tx_type not in ['INVEST', 'COLLECT']:
+        if tx_type not in ['INVEST', 'COLLECT', 'WITHDRAW']:
             return Response({'error': 'Invalid transaction type'}, status=status.HTTP_400_BAD_REQUEST)
         if not amount or float(amount) <= 0:
             return Response({'error': 'Valid positive amount is required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -255,19 +255,22 @@ def dashboard_summary_view(request):
         user_summaries = []
         
         for u in users:
-            # Calculate invest and collect totals
+            # Calculate invest, collect, and withdraw totals
             invests = Transaction.objects.filter(user=u, type='INVEST')
             collects = Transaction.objects.filter(user=u, type='COLLECT')
+            withdraws = Transaction.objects.filter(user=u, type='WITHDRAW')
             
             total_invest = sum(float(tx.amount) for tx in invests)
             total_collect = sum(float(tx.amount) for tx in collects)
-            balance = total_collect - total_invest
+            total_withdraw = sum(float(tx.amount) for tx in withdraws)
+            balance = total_collect - total_invest - total_withdraw
             
             user_summaries.append({
                 'user_id': u.id,
                 'username': u.username,
                 'total_invest': total_invest,
                 'total_collect': total_collect,
+                'total_withdraw': total_withdraw,
                 'balance': balance
             })
             
@@ -280,12 +283,14 @@ def dashboard_summary_view(request):
             # Group by local/UTC date string (YYYY-MM-DD)
             date_str = tx.date.strftime('%Y-%m-%d')
             if date_str not in daily_trends:
-                daily_trends[date_str] = {'date': date_str, 'invest': 0.0, 'collect': 0.0}
+                daily_trends[date_str] = {'date': date_str, 'invest': 0.0, 'collect': 0.0, 'withdraw': 0.0}
             
             if tx.type == 'INVEST':
                 daily_trends[date_str]['invest'] += float(tx.amount)
             elif tx.type == 'COLLECT':
                 daily_trends[date_str]['collect'] += float(tx.amount)
+            elif tx.type == 'WITHDRAW':
+                daily_trends[date_str]['withdraw'] += float(tx.amount)
                 
         trends_list = sorted(daily_trends.values(), key=lambda x: x['date'])
         
@@ -323,7 +328,12 @@ def send_fcm_notification(tx):
             print("No recipient device tokens registered.")
             return
 
-        display_type = "Investment (-)" if tx.type == "INVEST" else "Cash Collection (+)"
+        if tx.type == 'INVEST':
+            display_type = "Investment (-)"
+        elif tx.type == 'WITHDRAW':
+            display_type = "Personal Withdrawal (-)"
+        else:
+            display_type = "Cash Collection (+)"
         notification_title = "New Transaction Logged"
         notification_body = f"{display_type} of ₹{tx.amount} for: {tx.notes} (by {tx.user.username})"
 

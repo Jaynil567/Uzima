@@ -7,8 +7,6 @@ export default function Dashboard({ token, onUserClick, onCombineHistoryClick })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-
-
   const fetchDashboardData = async () => {
     setLoading(true)
     setError('')
@@ -59,7 +57,7 @@ export default function Dashboard({ token, onUserClick, onCombineHistoryClick })
 
     // Get max value to scale Y axis
     const maxVal = Math.max(
-      ...trends.map(t => Math.max(t.invest, t.collect)),
+      ...trends.map(t => Math.max(t.invest || 0, t.collect || 0, t.withdraw || 0)),
       100 // default minimum height
     )
 
@@ -69,24 +67,28 @@ export default function Dashboard({ token, onUserClick, onCombineHistoryClick })
       return padL + (index / (pointsCount - 1)) * chartW
     }
     const getY = (val) => {
-      return padT + chartH - (val / maxVal) * chartH
+      return padT + chartH - ((val || 0) / maxVal) * chartH
     }
 
     // Generate path descriptions
     let investPath = ''
     let collectPath = ''
+    let withdrawPath = ''
 
     trends.forEach((t, i) => {
       const x = getX(i)
       const yInvest = getY(t.invest)
       const yCollect = getY(t.collect)
+      const yWithdraw = getY(t.withdraw)
 
       if (i === 0) {
         investPath = `M ${x} ${yInvest}`
         collectPath = `M ${x} ${yCollect}`
+        withdrawPath = `M ${x} ${yWithdraw}`
       } else {
         investPath += ` L ${x} ${yInvest}`
         collectPath += ` L ${x} ${yCollect}`
+        withdrawPath += ` L ${x} ${yWithdraw}`
       }
     })
 
@@ -126,6 +128,7 @@ export default function Dashboard({ token, onUserClick, onCombineHistoryClick })
             <>
               <path d={investPath} className="chart-line-invest" />
               <path d={collectPath} className="chart-line-collect" />
+              <path d={withdrawPath} className="chart-line-withdraw" />
             </>
           )}
 
@@ -136,6 +139,7 @@ export default function Dashboard({ token, onUserClick, onCombineHistoryClick })
               <g key={i}>
                 {t.invest > 0 && <circle cx={x} cy={getY(t.invest)} r="3" className="chart-point-invest" />}
                 {t.collect > 0 && <circle cx={x} cy={getY(t.collect)} r="3" className="chart-point-collect" />}
+                {t.withdraw > 0 && <circle cx={x} cy={getY(t.withdraw)} r="3" className="chart-point-withdraw" />}
               </g>
             )
           })}
@@ -170,10 +174,19 @@ export default function Dashboard({ token, onUserClick, onCombineHistoryClick })
             <span className="chart-dot collect"></span>
             <span>Collect (₹)</span>
           </div>
+          <div className="chart-legend-item">
+            <span className="chart-dot withdraw"></span>
+            <span>Withdraw (₹)</span>
+          </div>
         </div>
       </div>
     )
   }
+
+  const companyTotalInvest = data?.users ? data.users.reduce((acc, u) => acc + (u.total_invest || 0), 0) : 0
+  const companyTotalCollect = data?.users ? data.users.reduce((acc, u) => acc + (u.total_collect || 0), 0) : 0
+  const companyTotalWithdraw = data?.users ? data.users.reduce((acc, u) => acc + (u.total_withdraw || 0), 0) : 0
+  const companyNetBalance = companyTotalCollect - companyTotalInvest - companyTotalWithdraw
 
   return (
     <div className="glass-card animate-fade-in nav-padding">
@@ -202,24 +215,30 @@ export default function Dashboard({ token, onUserClick, onCombineHistoryClick })
         </div>
       ) : (
         <div>
-          {/* Company Totals Cards */}
-          <div className="metrics-grid" style={{ marginBottom: '1.75rem' }}>
+          {/* Company Totals Cards (4 Grid Cards) */}
+          <div className="metrics-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.65rem', marginBottom: '1.75rem' }}>
             <div className="metric-card invest-card">
               <span className="label">Company Invest</span>
               <span className="value">
-                ₹{data.users.reduce((acc, u) => acc + u.total_invest, 0).toLocaleString('en-IN')}
+                ₹{companyTotalInvest.toLocaleString('en-IN')}
               </span>
             </div>
             <div className="metric-card collect-card">
               <span className="label">Company Collect</span>
               <span className="value">
-                ₹{data.users.reduce((acc, u) => acc + u.total_collect, 0).toLocaleString('en-IN')}
+                ₹{companyTotalCollect.toLocaleString('en-IN')}
+              </span>
+            </div>
+            <div className="metric-card withdraw-card">
+              <span className="label">Company Withdraw</span>
+              <span className="value">
+                ₹{companyTotalWithdraw.toLocaleString('en-IN')}
               </span>
             </div>
             <div className="metric-card balance-card">
               <span className="label">Company Balance</span>
-              <span className="value">
-                ₹{(data.users.reduce((acc, u) => acc + u.total_collect, 0) - data.users.reduce((acc, u) => acc + u.total_invest, 0)).toLocaleString('en-IN')}
+              <span className="value" style={{ color: companyNetBalance >= 0 ? '#c084fc' : 'var(--error)' }}>
+                ₹{companyNetBalance.toLocaleString('en-IN')}
               </span>
             </div>
           </div>
@@ -241,18 +260,22 @@ export default function Dashboard({ token, onUserClick, onCombineHistoryClick })
                   {u.username}
                 </span>
 
-                <div className="user-totals">
+                <div className="user-totals" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(70px, 1fr))', gap: '0.6rem', alignItems: 'center' }}>
                   <div>
                     <span className="label">Invested</span>
-                    <span className="val" style={{ color: 'var(--error)' }}>₹{u.total_invest.toLocaleString('en-IN')}</span>
+                    <span className="val" style={{ color: 'var(--error)' }}>₹{(u.total_invest || 0).toLocaleString('en-IN')}</span>
                   </div>
                   <div>
                     <span className="label">Collected</span>
-                    <span className="val" style={{ color: 'var(--success)' }}>₹{u.total_collect.toLocaleString('en-IN')}</span>
+                    <span className="val" style={{ color: 'var(--success)' }}>₹{(u.total_collect || 0).toLocaleString('en-IN')}</span>
                   </div>
-                  <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '0.75rem' }}>
+                  <div>
+                    <span className="label">Withdrawn</span>
+                    <span className="val" style={{ color: '#f59e0b' }}>₹{(u.total_withdraw || 0).toLocaleString('en-IN')}</span>
+                  </div>
+                  <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '0.6rem' }}>
                     <span className="label">Net Balance</span>
-                    <span className="val" style={{ color: u.balance >= 0 ? '#c084fc' : 'var(--error)' }}>₹{u.balance.toLocaleString('en-IN')}</span>
+                    <span className="val" style={{ color: u.balance >= 0 ? '#c084fc' : 'var(--error)' }}>₹{(u.balance || 0).toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               </div>

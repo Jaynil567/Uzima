@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { PlusCircle, ArrowDownCircle, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
+import { PlusCircle, ArrowDownCircle, MinusCircle, Loader2, CheckCircle2, AlertCircle } from 'lucide-react'
 import { getBackendUrl } from '../utils/api'
 
 const getTodayDateString = () => {
@@ -17,7 +17,6 @@ export default function Home({ token, onTransactionLogged }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-
 
   const handleTransaction = async (type) => {
     setError('')
@@ -53,7 +52,11 @@ export default function Home({ token, onTransactionLogged }) {
       const data = await response.json()
 
       if (response.ok) {
-        setSuccess(`${type === 'INVEST' ? 'Invested' : 'Collected'} ₹${parsedAmount.toLocaleString('en-IN')} successfully!`)
+        let actionLabel = 'Collected'
+        if (type === 'INVEST') actionLabel = 'Invested'
+        else if (type === 'WITHDRAW') actionLabel = 'Withdrew'
+
+        setSuccess(`${actionLabel} ₹${parsedAmount.toLocaleString('en-IN')} successfully!`)
         setAmount('')
         setNotes('')
         setDate(getTodayDateString())
@@ -75,7 +78,7 @@ export default function Home({ token, onTransactionLogged }) {
       
       <div className="glass-card-header">
         <h1>Quick Entry</h1>
-        <p>Log a new investment or cash collection</p>
+        <p>Log investment, collection, or personal withdrawal</p>
       </div>
 
       {error && (
@@ -112,8 +115,7 @@ export default function Home({ token, onTransactionLogged }) {
           </div>
         </div>
 
-
-        <div className="form-group" style={{ marginBottom: '2rem' }}>
+        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
           <label htmlFor="notes">Notes / Item Details</label>
           <input
             type="text"
@@ -128,7 +130,7 @@ export default function Home({ token, onTransactionLogged }) {
           />
         </div>
 
-        <div className="form-group">
+        <div className="form-group" style={{ marginBottom: '2rem' }}>
           <label htmlFor="date">Date</label>
           <input
             type="date"
@@ -142,18 +144,19 @@ export default function Home({ token, onTransactionLogged }) {
           />
         </div>
 
-        <div className="flex-row">
+        <div className="flex-row" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
           <button
             type="button"
             className="btn btn-invest"
             disabled={loading}
             onClick={() => handleTransaction('INVEST')}
+            style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem' }}
           >
             {loading ? (
-              <Loader2 size={16} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
+              <Loader2 size={14} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
             ) : (
               <>
-                <PlusCircle size={16} />
+                <PlusCircle size={15} />
                 Invest
               </>
             )}
@@ -164,13 +167,31 @@ export default function Home({ token, onTransactionLogged }) {
             className="btn btn-collect"
             disabled={loading}
             onClick={() => handleTransaction('COLLECT')}
+            style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem' }}
           >
             {loading ? (
-              <Loader2 size={16} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
+              <Loader2 size={14} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
             ) : (
               <>
-                <ArrowDownCircle size={16} />
+                <ArrowDownCircle size={15} />
                 Collect
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            className="btn btn-withdraw"
+            disabled={loading}
+            onClick={() => handleTransaction('WITHDRAW')}
+            style={{ padding: '0.75rem 0.5rem', fontSize: '0.85rem' }}
+          >
+            {loading ? (
+              <Loader2 size={14} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
+            ) : (
+              <>
+                <MinusCircle size={15} />
+                Withdraw
               </>
             )}
           </button>

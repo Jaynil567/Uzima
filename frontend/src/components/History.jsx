@@ -18,8 +18,6 @@ export default function History({ userId, username, token, currentUserId, onData
 
   const isSelf = userId === currentUserId
 
-
-
   const fetchUserHistory = async () => {
     setLoading(true)
     setError('')
@@ -128,10 +126,11 @@ export default function History({ userId, username, token, currentUserId, onData
     }
   }
 
-  // Calculate metrics
+  // Calculate metrics: Net Balance = Total Collect - Total Invest - Total Withdraw
   const totalInvest = transactions.filter(t => t.type === 'INVEST').reduce((acc, t) => acc + t.amount, 0)
   const totalCollect = transactions.filter(t => t.type === 'COLLECT').reduce((acc, t) => acc + t.amount, 0)
-  const balance = totalCollect - totalInvest
+  const totalWithdraw = transactions.filter(t => t.type === 'WITHDRAW').reduce((acc, t) => acc + t.amount, 0)
+  const balance = totalCollect - totalInvest - totalWithdraw
 
   // Group transactions by month
   const groupedTransactions = {};
@@ -165,8 +164,8 @@ export default function History({ userId, username, token, currentUserId, onData
         </div>
       )}
 
-      {/* Metrics Cards Grid */}
-      <div className="metrics-grid">
+      {/* Metrics Cards Grid (4 Cards) */}
+      <div className="metrics-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.65rem' }}>
         <div className="metric-card invest-card">
           <span className="label">Total Invest</span>
           <span className="value">₹{totalInvest.toLocaleString('en-IN')}</span>
@@ -177,9 +176,16 @@ export default function History({ userId, username, token, currentUserId, onData
           <span className="value">₹{totalCollect.toLocaleString('en-IN')}</span>
         </div>
 
+        <div className="metric-card withdraw-card">
+          <span className="label">Total Withdraw</span>
+          <span className="value">₹{totalWithdraw.toLocaleString('en-IN')}</span>
+        </div>
+
         <div className="metric-card balance-card">
           <span className="label">Net Balance</span>
-          <span className="value">₹{balance.toLocaleString('en-IN')}</span>
+          <span className="value" style={{ color: balance >= 0 ? '#c084fc' : 'var(--error)' }}>
+            ₹{balance.toLocaleString('en-IN')}
+          </span>
         </div>
       </div>
 
@@ -204,23 +210,33 @@ export default function History({ userId, username, token, currentUserId, onData
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 {groupedTransactions[monthYear].map((tx) => {
                   const isInvest = tx.type === 'INVEST'
+                  const isWithdraw = tx.type === 'WITHDRAW'
+                  const itemClass = isInvest ? 'type-expense' : isWithdraw ? 'type-withdraw' : 'type-income'
+                  const amountColor = isInvest ? 'var(--error)' : isWithdraw ? '#f59e0b' : 'var(--success)'
+                  const amountPrefix = (isInvest || isWithdraw) ? '-' : '+'
+
                   return (
                     <div 
                       key={tx.id} 
-                      className={`history-item ${isInvest ? 'type-expense' : 'type-income'}`}
+                      className={`history-item ${itemClass}`}
                       style={{ padding: '0.85rem 1rem', cursor: 'pointer' }}
                       onClick={() => onSelectTransaction && onSelectTransaction(tx)}
                     >
                       <div className="history-info">
                         <span className="history-desc">{tx.notes}</span>
-                        <div className="history-info-meta">
+                        <div className="history-info-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                           <span className="history-date" style={{ color: 'rgba(255,255,255,0.45)' }}>{formatDate(tx.date)}</span>
+                          {isWithdraw && (
+                            <span style={{ fontSize: '0.65rem', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 600 }}>
+                              Withdrawal
+                            </span>
+                          )}
                         </div>
                       </div>
 
                       <div className="history-right">
-                        <span className="history-amount" style={{ color: isInvest ? 'var(--error)' : 'var(--success)' }}>
-                          {isInvest ? '-' : '+'} ₹{tx.amount.toLocaleString('en-IN')}
+                        <span className="history-amount" style={{ color: amountColor }}>
+                          {amountPrefix} ₹{tx.amount.toLocaleString('en-IN')}
                         </span>
                         
                         {isSelf && (
@@ -280,22 +296,30 @@ export default function History({ userId, username, token, currentUserId, onData
             <form onSubmit={handleEditSubmit}>
               <div className="form-group">
                 <label>Type</label>
-                <div className="tab-group" style={{ marginBottom: 0 }}>
+                <div className="tab-group" style={{ marginBottom: 0, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.35rem' }}>
                   <button
                     type="button"
                     className={`tab-btn ${editType === 'INVEST' ? 'active' : ''}`}
-                    style={{ background: editType === 'INVEST' ? 'var(--error)' : '', boxShadow: 'none' }}
+                    style={{ background: editType === 'INVEST' ? 'var(--error)' : '', boxShadow: 'none', padding: '0.4rem 0.2rem', fontSize: '0.75rem' }}
                     onClick={() => setEditType('INVEST')}
                   >
-                    <TrendingDown size={12} /> Invest
+                    <TrendingDown size={11} /> Invest
                   </button>
                   <button
                     type="button"
                     className={`tab-btn ${editType === 'COLLECT' ? 'active' : ''}`}
-                    style={{ background: editType === 'COLLECT' ? 'var(--success)' : '', boxShadow: 'none' }}
+                    style={{ background: editType === 'COLLECT' ? 'var(--success)' : '', boxShadow: 'none', padding: '0.4rem 0.2rem', fontSize: '0.75rem' }}
                     onClick={() => setEditType('COLLECT')}
                   >
-                    <TrendingUp size={12} /> Collect
+                    <TrendingUp size={11} /> Collect
+                  </button>
+                  <button
+                    type="button"
+                    className={`tab-btn ${editType === 'WITHDRAW' ? 'active' : ''}`}
+                    style={{ background: editType === 'WITHDRAW' ? '#f59e0b' : '', boxShadow: 'none', padding: '0.4rem 0.2rem', fontSize: '0.75rem' }}
+                    onClick={() => setEditType('WITHDRAW')}
+                  >
+                    <TrendingDown size={11} /> Withdraw
                   </button>
                 </div>
               </div>

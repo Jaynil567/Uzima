@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { X, Calendar, User, FileText, ArrowDownRight, ArrowUpRight, Hash, Clock, Loader2 } from 'lucide-react'
+import { X, Calendar, User, FileText, ArrowDownRight, ArrowUpRight, MinusCircle, Hash, Clock, Loader2 } from 'lucide-react'
 import { getBackendUrl } from '../utils/api'
 
 export default function TransactionDetailModal({ transaction, txId, token, onClose }) {
@@ -40,6 +40,12 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
   if (!transaction && !txId) return null
 
   const isInvest = txData?.type === 'INVEST'
+  const isWithdraw = txData?.type === 'WITHDRAW'
+  const badgeColor = isInvest ? 'var(--error)' : isWithdraw ? '#f59e0b' : 'var(--success)'
+  const badgeBg = isInvest ? 'var(--error-bg)' : isWithdraw ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)'
+  const badgeBorder = isInvest ? 'var(--error-border)' : isWithdraw ? 'rgba(245, 158, 11, 0.25)' : 'rgba(16, 185, 129, 0.2)'
+  const pillBg = isInvest ? 'rgba(244, 63, 94, 0.15)' : isWithdraw ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)'
+  const typeLabel = isInvest ? 'INVESTMENT (-)' : isWithdraw ? 'PERSONAL WITHDRAWAL (-)' : 'CASH COLLECTION (+)'
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '-'
@@ -118,7 +124,7 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
               width: '8px',
               height: '8px',
               borderRadius: '50%',
-              backgroundColor: isInvest ? 'var(--error)' : 'var(--success)'
+              backgroundColor: badgeColor
             }} />
             <h3 style={{ margin: 0, fontSize: '1.1rem', fontWeight: 700, color: 'var(--foreground)' }}>
               Transaction Details
@@ -159,8 +165,8 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
                 textAlign: 'center',
                 padding: '1.25rem 1rem',
                 borderRadius: 'var(--radius-md)',
-                background: isInvest ? 'var(--error-bg)' : 'rgba(16, 185, 129, 0.1)',
-                border: `1px solid ${isInvest ? 'var(--error-border)' : 'rgba(16, 185, 129, 0.2)'}`
+                background: badgeBg,
+                border: `1px solid ${badgeBorder}`
               }}>
                 <div style={{
                   display: 'inline-flex',
@@ -173,18 +179,18 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
                   letterSpacing: '0.05em',
                   textTransform: 'uppercase',
                   marginBottom: '0.6rem',
-                  background: isInvest ? 'rgba(244, 63, 94, 0.15)' : 'rgba(16, 185, 129, 0.15)',
-                  color: isInvest ? 'var(--error)' : 'var(--success)'
+                  background: pillBg,
+                  color: badgeColor
                 }}>
-                  {isInvest ? <ArrowDownRight size={14} /> : <ArrowUpRight size={14} />}
-                  {isInvest ? 'INVESTMENT (-)' : 'CASH COLLECTION (+)'}
+                  {isInvest ? <ArrowDownRight size={14} /> : isWithdraw ? <MinusCircle size={14} /> : <ArrowUpRight size={14} />}
+                  {typeLabel}
                 </div>
 
                 <div style={{
                   fontSize: '2rem',
                   fontWeight: 800,
                   letterSpacing: '-0.02em',
-                  color: isInvest ? 'var(--error)' : 'var(--success)',
+                  color: badgeColor,
                   lineHeight: 1.1
                 }}>
                   ₹ {parseFloat(txData.amount || 0).toLocaleString('en-IN')}

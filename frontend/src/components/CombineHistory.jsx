@@ -13,8 +13,6 @@ export default function CombineHistory({ token, onSelectTransaction }) {
   const [selectedType, setSelectedType] = useState('ALL')
   const [sortBy, setSortBy] = useState('NEWEST') // 'NEWEST' | 'OLDEST'
 
-
-
   const fetchAllTransactions = async () => {
     setLoading(true)
     setError('')
@@ -145,6 +143,7 @@ export default function CombineHistory({ token, onSelectTransaction }) {
             <option value="ALL">All Types</option>
             <option value="INVEST">Invest</option>
             <option value="COLLECT">Collect</option>
+            <option value="WITHDRAW">Withdraw</option>
           </select>
 
           {/* Sort Order */}
@@ -173,24 +172,34 @@ export default function CombineHistory({ token, onSelectTransaction }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
           {filteredTransactions.map((tx) => {
             const isInvest = tx.type === 'INVEST'
+            const isWithdraw = tx.type === 'WITHDRAW'
+            const itemClass = isInvest ? 'type-expense' : isWithdraw ? 'type-withdraw' : 'type-income'
+            const amountColor = isInvest ? 'var(--error)' : isWithdraw ? '#f59e0b' : 'var(--success)'
+            const amountPrefix = (isInvest || isWithdraw) ? '-' : '+'
+
             return (
               <div 
                 key={tx.id} 
-                className={`history-item ${isInvest ? 'type-expense' : 'type-income'}`}
+                className={`history-item ${itemClass}`}
                 style={{ padding: '0.85rem 1rem', cursor: 'pointer' }}
                 onClick={() => onSelectTransaction && onSelectTransaction(tx)}
               >
                 <div className="history-info">
                   <span className="history-desc">{tx.notes}</span>
-                  <div className="history-info-meta">
+                  <div className="history-info-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
                     <span className="history-user" style={{ color: '#c084fc', fontWeight: 600 }}>{tx.username}</span>
                     <span className="history-date" style={{ color: 'rgba(255,255,255,0.45)' }}>• {formatDate(tx.date)}</span>
+                    {isWithdraw && (
+                      <span style={{ fontSize: '0.65rem', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 600 }}>
+                        Withdrawal
+                      </span>
+                    )}
                   </div>
                 </div>
 
                 <div className="history-right" style={{ gap: '0.5rem' }}>
-                  <span className="history-amount" style={{ color: isInvest ? 'var(--error)' : 'var(--success)' }}>
-                    {isInvest ? '-' : '+'} ₹{tx.amount.toLocaleString('en-IN')}
+                  <span className="history-amount" style={{ color: amountColor }}>
+                    {amountPrefix} ₹{tx.amount.toLocaleString('en-IN')}
                   </span>
                 </div>
               </div>
