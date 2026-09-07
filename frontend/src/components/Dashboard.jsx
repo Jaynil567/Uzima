@@ -230,7 +230,7 @@ export default function Dashboard({ token, onUserClick, onCombineHistoryClick })
               </span>
             </div>
             <div className="metric-card withdraw-card">
-              <span className="label">Company Withdraw</span>
+              <span className="label">Partners Withdraw</span>
               <span className="value">
                 ₹{companyTotalWithdraw.toLocaleString('en-IN')}
               </span>
