@@ -1,11 +1,12 @@
-import { useState, useEffect } from 'react'
-import { Calendar, Trash2, Edit, X, Loader2, AlertCircle, TrendingUp, TrendingDown, IndianRupee } from 'lucide-react'
+import { useState, useEffect, useMemo } from 'react'
+import { Calendar, ChevronLeft, ChevronRight, Trash2, Edit, X, Loader2, AlertCircle, TrendingUp, TrendingDown, Layers } from 'lucide-react'
 import { getBackendUrl } from '../utils/api'
 
 export default function History({ userId, username, token, currentUserId, onDataChanged, onSelectTransaction }) {
   const [transactions, setTransactions] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [selectedMonth, setSelectedMonth] = useState('')
 
   // Edit modal states
   const [showEditModal, setShowEditModal] = useState(false)
@@ -18,6 +19,11 @@ export default function History({ userId, username, token, currentUserId, onData
 
   const isSelf = userId === currentUserId
 
+  const getMonthYear = (dateStr) => {
+    const d = new Date(dateStr)
+    return d.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
+  }
+
   const fetchUserHistory = async () => {
     setLoading(true)
     setError('')
@@ -29,7 +35,16 @@ export default function History({ userId, username, token, currentUserId, onData
       })
       const data = await response.json()
       if (response.ok) {
-        setTransactions(data.transactions)
+        const txList = data.transactions || []
+        setTransactions(txList)
+        
+        // Auto-select latest month if not already selected
+        if (txList.length > 0) {
+          const latestMonth = getMonthYear(txList[0].date)
+          setSelectedMonth(prev => prev || latestMonth)
+        } else {
+          setSelectedMonth('ALL')
+        }
       } else {
         setError(data.error || 'Failed to fetch history')
       }
@@ -44,6 +59,69 @@ export default function History({ userId, username, token, currentUserId, onData
   useEffect(() => {
     fetchUserHistory()
   }, [userId])
+
+  // Derive unique months list chronologically (newest first)
+  const uniqueMonths = useMemo(() => {
+    const months = []
+    transactions.forEach(t => {
+      const m = getMonthYear(t.date)
+      if (!months.includes(m)) months.push(m)
+    })
+    return months
+  }, [transactions])
+
+  // Active transactions based on selected month
+  const activeTransactions = useMemo(() => {
+    if (!selectedMonth || selectedMonth === 'ALL') {
+      return transactions
+    }
+    return transactions.filter(t => getMonthYear(t.date) === selectedMonth)
+  }, [transactions, selectedMonth])
+
+  // Calculate dynamic metrics for the selected month/period
+  const metrics = useMemo(() => {
+    const totalInvest = activeTransactions.filter(t => t.type === 'INVEST').reduce((acc, t) => acc + t.amount, 0)
+    const totalCollect = activeTransactions.filter(t => t.type === 'COLLECT').reduce((acc, t) => acc + t.amount, 0)
+    const totalWithdraw = activeTransactions.filter(t => t.type === 'WITHDRAW').reduce((acc, t) => acc + t.amount, 0)
+    const balance = totalCollect - totalInvest - totalWithdraw
+    return { totalInvest, totalCollect, totalWithdraw, balance }
+  }, [activeTransactions])
+
+  // Group active transactions by month for structured rendering
+  const groupedTransactions = useMemo(() => {
+    const grouped = {}
+    activeTransactions.forEach((tx) => {
+      const m = getMonthYear(tx.date)
+      if (!grouped[m]) grouped[m] = []
+      grouped[m].push(tx)
+    })
+    return grouped
+  }, [activeTransactions])
+
+  // Month navigation helpers
+  const currentMonthIndex = uniqueMonths.indexOf(selectedMonth)
+  const hasNewerMonth = currentMonthIndex > 0
+  const hasOlderMonth = currentMonthIndex >= 0 && currentMonthIndex < uniqueMonths.length - 1
+
+  const handlePrevMonth = () => {
+    if (selectedMonth === 'ALL') {
+      if (uniqueMonths.length > 0) setSelectedMonth(uniqueMonths[0])
+      return
+    }
+    if (hasOlderMonth) {
+      setSelectedMonth(uniqueMonths[currentMonthIndex + 1])
+    }
+  }
+
+  const handleNextMonth = () => {
+    if (selectedMonth === 'ALL') {
+      if (uniqueMonths.length > 0) setSelectedMonth(uniqueMonths[0])
+      return
+    }
+    if (hasNewerMonth) {
+      setSelectedMonth(uniqueMonths[currentMonthIndex - 1])
+    }
+  }
 
   // Delete transaction
   const handleDelete = async (txId) => {
@@ -126,26 +204,18 @@ export default function History({ userId, username, token, currentUserId, onData
     }
   }
 
-  // Calculate metrics: Net Balance = Total Collect - Total Invest - Total Withdraw
-  const totalInvest = transactions.filter(t => t.type === 'INVEST').reduce((acc, t) => acc + t.amount, 0)
-  const totalCollect = transactions.filter(t => t.type === 'COLLECT').reduce((acc, t) => acc + t.amount, 0)
-  const totalWithdraw = transactions.filter(t => t.type === 'WITHDRAW').reduce((acc, t) => acc + t.amount, 0)
-  const balance = totalCollect - totalInvest - totalWithdraw
-
-  // Group transactions by month
-  const groupedTransactions = {};
-  transactions.forEach((tx) => {
-    const date = new Date(tx.date)
-    const monthYear = date.toLocaleDateString('en-IN', { month: 'long', year: 'numeric' })
-    if (!groupedTransactions[monthYear]) {
-      groupedTransactions[monthYear] = []
-    }
-    groupedTransactions[monthYear].push(tx)
-  })
-
   const formatDate = (dateStr) => {
     const date = new Date(dateStr)
     return date.toLocaleDateString('en-IN', { day: '2-digit', month: 'short' }) + ' ' + date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })
+  }
+
+  // Calculate monthly subtotal for a group header
+  const getMonthSubtotal = (txList) => {
+    const c = txList.filter(t => t.type === 'COLLECT').reduce((acc, t) => acc + t.amount, 0)
+    const i = txList.filter(t => t.type === 'INVEST').reduce((acc, t) => acc + t.amount, 0)
+    const w = txList.filter(t => t.type === 'WITHDRAW').reduce((acc, t) => acc + t.amount, 0)
+    const net = c - i - w
+    return net
   }
 
   return (
@@ -154,7 +224,7 @@ export default function History({ userId, username, token, currentUserId, onData
 
       <div className="glass-card-header">
         <h1>{username}'s Ledger</h1>
-        <p>{isSelf ? 'Personal financial transactions overview' : 'Auditable business history'}</p>
+        <p>{isSelf ? 'Personal month-by-month financial ledger' : 'Auditable business history'}</p>
       </div>
 
       {error && (
@@ -164,27 +234,71 @@ export default function History({ userId, username, token, currentUserId, onData
         </div>
       )}
 
-      {/* Metrics Cards Grid (4 Cards) */}
-      <div className="metrics-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.65rem' }}>
+      {/* MONTH PICKER & STEPPER BAR */}
+      {uniqueMonths.length > 0 && (
+        <div className="month-picker-bar">
+          <button 
+            className="month-picker-btn"
+            onClick={handlePrevMonth}
+            disabled={!hasOlderMonth && selectedMonth !== 'ALL'}
+            title="Older Month"
+          >
+            <ChevronLeft size={16} />
+          </button>
+
+          <select 
+            className="month-select-dropdown"
+            value={selectedMonth}
+            onChange={(e) => setSelectedMonth(e.target.value)}
+          >
+            <option value="ALL">🗓️ All Time (All Months)</option>
+            {uniqueMonths.map((m) => (
+              <option key={m} value={m}>
+                📅 {m}
+              </option>
+            ))}
+          </select>
+
+          <button 
+            className="month-picker-btn"
+            onClick={handleNextMonth}
+            disabled={!hasNewerMonth && selectedMonth !== 'ALL'}
+            title="Newer Month"
+          >
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* DYNAMIC MONTH METRICS (4 CARDS) */}
+      <div className="metrics-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.65rem', marginBottom: '1.25rem' }}>
         <div className="metric-card invest-card">
-          <span className="label">Total Invest</span>
-          <span className="value">₹{totalInvest.toLocaleString('en-IN')}</span>
+          <span className="label">
+            {selectedMonth === 'ALL' ? 'Total Invest' : 'Month Invest'}
+          </span>
+          <span className="value">₹{metrics.totalInvest.toLocaleString('en-IN')}</span>
         </div>
         
         <div className="metric-card collect-card">
-          <span className="label">Total Collect</span>
-          <span className="value">₹{totalCollect.toLocaleString('en-IN')}</span>
+          <span className="label">
+            {selectedMonth === 'ALL' ? 'Total Collect' : 'Month Collect'}
+          </span>
+          <span className="value">₹{metrics.totalCollect.toLocaleString('en-IN')}</span>
         </div>
 
         <div className="metric-card withdraw-card">
-          <span className="label">Total Withdraw</span>
-          <span className="value">₹{totalWithdraw.toLocaleString('en-IN')}</span>
+          <span className="label">
+            {selectedMonth === 'ALL' ? 'Total Withdraw' : 'Month Withdraw'}
+          </span>
+          <span className="value">₹{metrics.totalWithdraw.toLocaleString('en-IN')}</span>
         </div>
 
         <div className="metric-card balance-card">
-          <span className="label">Net Balance</span>
-          <span className="value" style={{ color: balance >= 0 ? '#c084fc' : 'var(--error)' }}>
-            ₹{balance.toLocaleString('en-IN')}
+          <span className="label">
+            {selectedMonth === 'ALL' ? 'Net Balance' : 'Month Balance'}
+          </span>
+          <span className="value" style={{ color: metrics.balance >= 0 ? '#c084fc' : 'var(--error)' }}>
+            ₹{metrics.balance.toLocaleString('en-IN')}
           </span>
         </div>
       </div>
@@ -194,82 +308,102 @@ export default function History({ userId, username, token, currentUserId, onData
           <Loader2 size={32} className="animate-spin" style={{ animation: 'spin 1s linear infinite', color: 'var(--primary)' }} />
           <span style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>Loading entries...</span>
         </div>
-      ) : transactions.length === 0 ? (
-        <div className="history-empty" style={{ padding: '4rem 1rem' }}>
-          No logged transactions found for this user.
+      ) : activeTransactions.length === 0 ? (
+        <div className="history-empty" style={{ padding: '3rem 1rem' }}>
+          No transactions found for {selectedMonth === 'ALL' ? 'this user' : selectedMonth}.
         </div>
       ) : (
         <div className="history-list">
-          {Object.keys(groupedTransactions).map((monthYear) => (
-            <div key={monthYear} className="history-group">
-              <div className="history-group-header">
-                <span>{monthYear}</span>
-                <span style={{ fontSize: '0.7rem' }}>{groupedTransactions[monthYear].length} entries</span>
-              </div>
+          {Object.keys(groupedTransactions).map((monthYear) => {
+            const txList = groupedTransactions[monthYear]
+            const monthNet = getMonthSubtotal(txList)
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                {groupedTransactions[monthYear].map((tx) => {
-                  const isInvest = tx.type === 'INVEST'
-                  const isWithdraw = tx.type === 'WITHDRAW'
-                  const itemClass = isInvest ? 'type-expense' : isWithdraw ? 'type-withdraw' : 'type-income'
-                  const amountColor = isInvest ? 'var(--error)' : isWithdraw ? '#f59e0b' : 'var(--success)'
-                  const amountPrefix = (isInvest || isWithdraw) ? '-' : '+'
+            return (
+              <div key={monthYear} className="history-group">
+                <div className="history-group-header">
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                    <Calendar size={14} style={{ color: '#c084fc' }} />
+                    <span>{monthYear}</span>
+                    <span style={{ fontSize: '0.7rem', color: 'var(--muted)', fontWeight: 500 }}>
+                      ({txList.length})
+                    </span>
+                  </div>
 
-                  return (
-                    <div 
-                      key={tx.id} 
-                      className={`history-item ${itemClass}`}
-                      style={{ padding: '0.85rem 1rem', cursor: 'pointer' }}
-                      onClick={() => onSelectTransaction && onSelectTransaction(tx)}
-                    >
-                      <div className="history-info">
-                        <span className="history-desc">{tx.notes}</span>
-                        <div className="history-info-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <span className="history-date" style={{ color: 'rgba(255,255,255,0.45)' }}>{formatDate(tx.date)}</span>
-                          {isWithdraw && (
-                            <span style={{ fontSize: '0.65rem', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 600 }}>
-                              Withdrawal
-                            </span>
+                  <span 
+                    className="month-summary-tag"
+                    style={{
+                      color: monthNet >= 0 ? 'var(--success)' : 'var(--error)',
+                      background: monthNet >= 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(244, 63, 94, 0.1)'
+                    }}
+                  >
+                    Net: {monthNet >= 0 ? '+' : ''}₹{monthNet.toLocaleString('en-IN')}
+                  </span>
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                  {txList.map((tx) => {
+                    const isInvest = tx.type === 'INVEST'
+                    const isWithdraw = tx.type === 'WITHDRAW'
+                    const itemClass = isInvest ? 'type-expense' : isWithdraw ? 'type-withdraw' : 'type-income'
+                    const amountColor = isInvest ? 'var(--error)' : isWithdraw ? '#f59e0b' : 'var(--success)'
+                    const amountPrefix = (isInvest || isWithdraw) ? '-' : '+'
+
+                    return (
+                      <div 
+                        key={tx.id} 
+                        className={`history-item ${itemClass}`}
+                        style={{ padding: '0.85rem 1rem', cursor: 'pointer' }}
+                        onClick={() => onSelectTransaction && onSelectTransaction(tx)}
+                      >
+                        <div className="history-info">
+                          <span className="history-desc">{tx.notes}</span>
+                          <div className="history-info-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span className="history-date" style={{ color: 'rgba(255,255,255,0.45)' }}>{formatDate(tx.date)}</span>
+                            {isWithdraw && (
+                              <span style={{ fontSize: '0.65rem', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 600 }}>
+                                Withdrawal
+                              </span>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="history-right">
+                          <span className="history-amount" style={{ color: amountColor }}>
+                            {amountPrefix} ₹{tx.amount.toLocaleString('en-IN')}
+                          </span>
+                          
+                          {isSelf && (
+                            <div style={{ display: 'flex', gap: '0.35rem', marginLeft: '0.5rem' }}>
+                              <button 
+                                className="btn btn-primary btn-sm"
+                                style={{ padding: '0.35rem', background: 'rgba(147, 51, 234, 0.1)', border: '1px solid var(--card-border-glow)', color: '#c084fc' }}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  openEditModal(tx)
+                                }}
+                              >
+                                <Edit size={12} />
+                              </button>
+                              <button 
+                                className="btn btn-danger btn-sm"
+                                style={{ padding: '0.35rem' }}
+                                onClick={(e) => {
+                                  e.stopPropagation()
+                                  handleDelete(tx.id)
+                                }}
+                              >
+                                <Trash2 size={12} />
+                              </button>
+                            </div>
                           )}
                         </div>
                       </div>
-
-                      <div className="history-right">
-                        <span className="history-amount" style={{ color: amountColor }}>
-                          {amountPrefix} ₹{tx.amount.toLocaleString('en-IN')}
-                        </span>
-                        
-                        {isSelf && (
-                          <div style={{ display: 'flex', gap: '0.35rem', marginLeft: '0.5rem' }}>
-                            <button 
-                              className="btn btn-primary btn-sm"
-                              style={{ padding: '0.35rem', background: 'rgba(147, 51, 234, 0.1)', border: '1px solid var(--card-border-glow)', color: '#c084fc' }}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                openEditModal(tx)
-                              }}
-                            >
-                              <Edit size={12} />
-                            </button>
-                            <button 
-                              className="btn btn-danger btn-sm"
-                              style={{ padding: '0.35rem' }}
-                              onClick={(e) => {
-                                e.stopPropagation()
-                                handleDelete(tx.id)
-                              }}
-                            >
-                              <Trash2 size={12} />
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  )
-                })}
+                    )
+                  })}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
