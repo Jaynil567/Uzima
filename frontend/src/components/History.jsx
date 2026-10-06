@@ -78,14 +78,39 @@ export default function History({ userId, username, token, currentUserId, onData
     return transactions.filter(t => getMonthYear(t.date) === selectedMonth)
   }, [transactions, selectedMonth])
 
-  // Calculate dynamic metrics for the selected month/period
+  // Transactions from the beginning of history up to the end of the selected month
+  const cumulativeTransactions = useMemo(() => {
+    if (!selectedMonth || selectedMonth === 'ALL') {
+      return transactions
+    }
+    const targetTx = transactions.find(t => getMonthYear(t.date) === selectedMonth)
+    if (!targetTx) return transactions
+
+    const targetDate = new Date(targetTx.date)
+    const targetVal = targetDate.getFullYear() * 12 + targetDate.getMonth()
+
+    return transactions.filter(t => {
+      const d = new Date(t.date)
+      const val = d.getFullYear() * 12 + d.getMonth()
+      return val <= targetVal
+    })
+  }, [transactions, selectedMonth])
+
+  // Calculate dynamic metrics for the selected month/period:
+  // - Month Invest, Month Collect, Month Withdraw: from the selected month only (activeTransactions)
+  // - Balance: cumulative from beginning up to the end of the selected month (cumulativeTransactions)
   const metrics = useMemo(() => {
     const totalInvest = activeTransactions.filter(t => t.type === 'INVEST').reduce((acc, t) => acc + t.amount, 0)
     const totalCollect = activeTransactions.filter(t => t.type === 'COLLECT').reduce((acc, t) => acc + t.amount, 0)
     const totalWithdraw = activeTransactions.filter(t => t.type === 'WITHDRAW').reduce((acc, t) => acc + t.amount, 0)
-    const balance = totalCollect - totalInvest - totalWithdraw
+
+    const cumInvest = cumulativeTransactions.filter(t => t.type === 'INVEST').reduce((acc, t) => acc + t.amount, 0)
+    const cumCollect = cumulativeTransactions.filter(t => t.type === 'COLLECT').reduce((acc, t) => acc + t.amount, 0)
+    const cumWithdraw = cumulativeTransactions.filter(t => t.type === 'WITHDRAW').reduce((acc, t) => acc + t.amount, 0)
+    const balance = cumCollect - cumInvest - cumWithdraw
+
     return { totalInvest, totalCollect, totalWithdraw, balance }
-  }, [activeTransactions])
+  }, [activeTransactions, cumulativeTransactions])
 
   // Group active transactions by month for structured rendering
   const groupedTransactions = useMemo(() => {
@@ -293,9 +318,9 @@ export default function History({ userId, username, token, currentUserId, onData
           <span className="value">₹{metrics.totalWithdraw.toLocaleString('en-IN')}</span>
         </div>
 
-        <div className="metric-card balance-card">
+        <div className="metric-card balance-card" title={selectedMonth === 'ALL' ? 'Total Net Balance' : `Cumulative balance from start up to end of ${selectedMonth}`}>
           <span className="label">
-            {selectedMonth === 'ALL' ? 'Net Balance' : 'Month Balance'}
+            {selectedMonth === 'ALL' ? 'Net Balance' : 'Closing Balance'}
           </span>
           <span className="value" style={{ color: metrics.balance >= 0 ? '#c084fc' : 'var(--error)' }}>
             ₹{metrics.balance.toLocaleString('en-IN')}
