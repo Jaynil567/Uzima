@@ -343,22 +343,11 @@ export default function CombineHistory({ token, onSelectTransaction }) {
                             {amountPrefix}{amountPrefix ? ' ' : ''}₹{tx.amount.toLocaleString('en-IN')}
                           </span>
                           <div 
-                            style={{
-                              fontSize: '0.72rem',
-                              fontWeight: 600,
-                              color: balanceColor,
-                              background: 'rgba(255, 255, 255, 0.03)',
-                              padding: '0.1rem 0.45rem',
-                              borderRadius: '4px',
-                              border: '1px solid rgba(255, 255, 255, 0.06)',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.2rem'
-                            }}
+                            className="balance-chip"
                             title={`${tx.username}'s balance after this entry: ₹${balanceAfter.toLocaleString('en-IN')}`}
                           >
-                            <span style={{ color: 'var(--muted)', fontSize: '0.65rem' }}>Bal:</span>
-                            <span>₹{balanceAfter.toLocaleString('en-IN')}</span>
+                            <span style={{ color: 'var(--foreground-dim)', fontSize: '0.65rem' }}>Bal:</span>
+                            <span style={{ color: balanceColor }}>₹{balanceAfter.toLocaleString('en-IN')}</span>
                           </div>
                         </div>
                       </div>

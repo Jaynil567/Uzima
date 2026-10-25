@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { PlusCircle, ArrowDownCircle, MinusCircle, ArrowRightLeft, Loader2, CheckCircle2, AlertCircle, X, User } from 'lucide-react'
+import { PlusCircle, ArrowDownCircle, MinusCircle, ArrowRightLeft, Loader2, CheckCircle2, AlertCircle, X, User, FileText, Calendar } from 'lucide-react'
 import { getBackendUrl } from '../utils/api'
 
 const getTodayDateString = () => {
@@ -38,6 +38,11 @@ export default function Home({ token, currentUser, onTransactionLogged }) {
       })
       .catch(err => console.error('Failed to load partners', err))
   }, [token])
+
+  const addQuickAmount = (val) => {
+    const curr = parseFloat(amount) || 0
+    setAmount((curr + val).toString())
+  }
 
   const handleTransaction = async (type) => {
     setError('')
@@ -149,12 +154,10 @@ export default function Home({ token, currentUser, onTransactionLogged }) {
   }
 
   return (
-    <div className="glass-card animate-fade-in">
-      <div className="accent-glow-top"></div>
-      
+    <div className="glass-card animate-fade-in nav-padding">
       <div className="glass-card-header">
         <h1>Quick Entry</h1>
-        <p>Log investment, collection, withdrawal, or partner transfer</p>
+        <p>Log investments, collections, withdrawals, or partner transfers</p>
       </div>
 
       {error && (
@@ -165,23 +168,25 @@ export default function Home({ token, currentUser, onTransactionLogged }) {
       )}
 
       {success && (
-        <div className="error-banner" style={{ background: 'rgba(34,197,94,0.1)', borderColor: 'rgba(34,197,94,0.2)', color: '#86efac' }}>
+        <div className="error-banner" style={{ background: 'rgba(16,185,129,0.12)', borderColor: 'rgba(16,185,129,0.3)', color: '#6ee7b7' }}>
           <CheckCircle2 size={16} />
           <span>{success}</span>
         </div>
       )}
 
       <form onSubmit={(e) => e.preventDefault()}>
-        <div className="form-group">
-          <label htmlFor="amount">Amount (Rupees)</label>
-          <div className="input-wrapper" style={{ display: 'flex', alignItems: 'center' }}>
-            <span style={{ position: 'absolute', left: '0.75rem', color: 'var(--muted)', fontWeight: 600 }}>₹</span>
+        {/* HERO AMOUNT INPUT CARD */}
+        <div className="hero-amount-card">
+          <div style={{ textAlign: 'center', fontSize: '0.72rem', color: 'var(--foreground-muted)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.4rem' }}>
+            Transaction Amount
+          </div>
+          <div className="hero-amount-display">
+            <span className="hero-currency-symbol">₹</span>
             <input
               type="number"
               inputMode="decimal"
               id="amount"
-              className="form-control"
-              style={{ paddingLeft: '1.75rem' }}
+              className="hero-amount-input"
               placeholder="0.00"
               required
               value={amount}
@@ -189,52 +194,64 @@ export default function Home({ token, currentUser, onTransactionLogged }) {
               disabled={loading || transferring}
             />
           </div>
+
+          <div className="quick-amount-pills">
+            <button type="button" className="quick-amount-pill" onClick={() => addQuickAmount(500)}>+ ₹500</button>
+            <button type="button" className="quick-amount-pill" onClick={() => addQuickAmount(1000)}>+ ₹1,000</button>
+            <button type="button" className="quick-amount-pill" onClick={() => addQuickAmount(5000)}>+ ₹5,000</button>
+            <button type="button" className="quick-amount-pill" onClick={() => addQuickAmount(10000)}>+ ₹10,000</button>
+          </div>
         </div>
 
-        <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+        {/* NOTES INPUT */}
+        <div className="form-group">
           <label htmlFor="notes">Notes / Item Details</label>
-          <input
-            type="text"
-            id="notes"
-            className="form-control"
-            style={{ paddingLeft: '0.75rem' }}
-            placeholder="What was this for?"
-            required
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            disabled={loading || transferring}
-          />
+          <div className="input-wrapper">
+            <FileText size={16} className="input-icon" />
+            <input
+              type="text"
+              id="notes"
+              className="form-control"
+              placeholder="What was this transaction for?"
+              required
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              disabled={loading || transferring}
+            />
+          </div>
         </div>
 
-        <div className="form-group" style={{ marginBottom: '2rem' }}>
+        {/* DATE INPUT */}
+        <div className="form-group" style={{ marginBottom: '1.75rem' }}>
           <label htmlFor="date">Date</label>
-          <input
-            type="date"
-            id="date"
-            className="form-control"
-            style={{ paddingLeft: '0.75rem' }}
-            required
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            disabled={loading || transferring}
-          />
+          <div className="input-wrapper">
+            <Calendar size={16} className="input-icon" />
+            <input
+              type="date"
+              id="date"
+              className="form-control"
+              required
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              disabled={loading || transferring}
+            />
+          </div>
         </div>
 
-        {/* 4 Action Buttons in a clean 2x2 responsive grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.65rem' }}>
+        {/* 4 ACTION BUTTONS IN 2X2 RESPONSIVE FINTECH GRID */}
+        <div className="action-buttons-grid">
           <button
             type="button"
             className="btn btn-invest"
             disabled={loading || transferring}
             onClick={() => handleTransaction('INVEST')}
-            style={{ padding: '0.85rem 0.5rem', fontSize: '0.88rem', margin: 0 }}
           >
             {loading ? (
               <Loader2 size={16} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
             ) : (
               <>
-                <PlusCircle size={16} />
-                Invest
+                <PlusCircle size={17} />
+                Invest (-)
               </>
             )}
           </button>
@@ -244,14 +261,13 @@ export default function Home({ token, currentUser, onTransactionLogged }) {
             className="btn btn-collect"
             disabled={loading || transferring}
             onClick={() => handleTransaction('COLLECT')}
-            style={{ padding: '0.85rem 0.5rem', fontSize: '0.88rem', margin: 0 }}
           >
             {loading ? (
               <Loader2 size={16} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
             ) : (
               <>
-                <ArrowDownCircle size={16} />
-                Collect
+                <ArrowDownCircle size={17} />
+                Collect (+)
               </>
             )}
           </button>
@@ -261,14 +277,13 @@ export default function Home({ token, currentUser, onTransactionLogged }) {
             className="btn btn-withdraw"
             disabled={loading || transferring}
             onClick={() => handleTransaction('WITHDRAW')}
-            style={{ padding: '0.85rem 0.5rem', fontSize: '0.88rem', margin: 0 }}
           >
             {loading ? (
               <Loader2 size={16} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
             ) : (
               <>
-                <MinusCircle size={16} />
-                Withdraw
+                <MinusCircle size={17} />
+                Withdraw (-)
               </>
             )}
           </button>
@@ -278,9 +293,8 @@ export default function Home({ token, currentUser, onTransactionLogged }) {
             className="btn btn-transfer"
             disabled={loading || transferring}
             onClick={openTransferModal}
-            style={{ padding: '0.85rem 0.5rem', fontSize: '0.88rem', margin: 0 }}
           >
-            <ArrowRightLeft size={16} />
+            <ArrowRightLeft size={17} />
             Transfer ➔
           </button>
         </div>
@@ -295,14 +309,14 @@ export default function Home({ token, currentUser, onTransactionLogged }) {
                 <h3 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#38bdf8', margin: 0 }}>
                   Transfer Cash
                 </h3>
-                <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginTop: '0.2rem' }}>
+                <p style={{ fontSize: '0.8rem', color: 'var(--foreground-muted)', marginTop: '0.2rem' }}>
                   Gave ₹{parseFloat(amount || 0).toLocaleString('en-IN')} to which partner?
                 </p>
               </div>
               <button
                 type="button"
                 onClick={() => !transferring && setShowTransferModal(false)}
-                style={{ background: 'transparent', border: 'none', color: 'var(--muted)', cursor: 'pointer' }}
+                style={{ background: 'transparent', border: 'none', color: 'var(--foreground-muted)', cursor: 'pointer' }}
               >
                 <X size={20} />
               </button>
@@ -318,8 +332,8 @@ export default function Home({ token, currentUser, onTransactionLogged }) {
                     disabled={transferring}
                     onClick={() => handleExecuteTransfer(p.id, p.username)}
                     style={{
-                      background: 'rgba(56, 189, 248, 0.08)',
-                      border: '1px solid rgba(56, 189, 248, 0.25)',
+                      background: 'rgba(14, 165, 233, 0.08)',
+                      border: '1px solid rgba(14, 165, 233, 0.25)',
                       borderRadius: 'var(--radius-md)',
                       padding: '0.9rem 1.1rem',
                       display: 'flex',
@@ -337,19 +351,19 @@ export default function Home({ token, currentUser, onTransactionLogged }) {
                         width: '36px',
                         height: '36px',
                         borderRadius: '50%',
-                        background: 'rgba(56, 189, 248, 0.2)',
-                        color: '#38bdf8',
+                        background: 'linear-gradient(135deg, #0ea5e9, #6366f1)',
+                        color: '#fff',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontWeight: 700,
-                        fontSize: '1rem'
+                        fontWeight: 800,
+                        fontSize: '0.95rem'
                       }}>
                         {p.username.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div style={{ fontWeight: 700, fontSize: '1rem' }}>{p.username}</div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--muted)' }}>
+                        <div style={{ fontWeight: 700, fontSize: '0.98rem' }}>{p.username}</div>
+                        <div style={{ fontSize: '0.72rem', color: 'var(--foreground-dim)' }}>
                           Tap to transfer ₹{parseFloat(amount || 0).toLocaleString('en-IN')}
                         </div>
                       </div>
@@ -359,14 +373,14 @@ export default function Home({ token, currentUser, onTransactionLogged }) {
                 ))}
 
               {partners.filter(p => !currentUser || p.id !== currentUser.id).length === 0 && (
-                <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--muted)', fontSize: '0.85rem' }}>
+                <div style={{ padding: '2rem 1rem', textAlign: 'center', color: 'var(--foreground-muted)', fontSize: '0.85rem' }}>
                   No other partners registered yet.
                 </div>
               )}
             </div>
 
             {transferring && (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginTop: '1.25rem', color: '#38bdf8', fontSize: '0.85rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', marginTop: '1.25rem', color: '#38bdf8', fontSize: '0.85rem', fontWeight: 600 }}>
                 <Loader2 size={16} className="animate-spin" style={{ animation: 'spin 1s linear infinite' }} />
                 <span>Recording inter-partner transfer...</span>
               </div>

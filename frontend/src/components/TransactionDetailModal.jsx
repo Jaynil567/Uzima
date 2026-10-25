@@ -108,7 +108,7 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
       <div 
         className="modal-content animate-scale-up"
         style={{
-          backgroundColor: '#121217',
+          backgroundColor: '#0d1322',
           border: '1px solid var(--card-border)',
           borderRadius: 'var(--radius-lg)',
           width: '100%',

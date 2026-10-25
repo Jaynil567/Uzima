@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
-import { Calendar, ChevronLeft, ChevronRight, Trash2, Edit, X, Loader2, AlertCircle, TrendingUp, TrendingDown, Layers } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Trash2, Edit, X, Loader2, AlertCircle, TrendingUp, TrendingDown, Layers, Wallet, MinusCircle } from 'lucide-react'
 import { getBackendUrl } from '../utils/api'
 
 export default function History({ userId, username, token, currentUserId, onDataChanged, onSelectTransaction }) {
@@ -330,9 +330,10 @@ export default function History({ userId, username, token, currentUserId, onData
       )}
 
       {/* DYNAMIC MONTH METRICS (4 CARDS) */}
-      <div className="metrics-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.65rem', marginBottom: '1.25rem' }}>
+      <div className="metrics-grid">
         <div className="metric-card invest-card">
           <span className="label">
+            <TrendingDown size={12} />
             {selectedMonth === 'ALL' ? 'Total Invest' : 'Month Invest'}
           </span>
           <span className="value">₹{metrics.totalInvest.toLocaleString('en-IN')}</span>
@@ -340,6 +341,7 @@ export default function History({ userId, username, token, currentUserId, onData
         
         <div className="metric-card collect-card">
           <span className="label">
+            <TrendingUp size={12} />
             {selectedMonth === 'ALL' ? 'Total Collect' : 'Month Collect'}
           </span>
           <span className="value">₹{metrics.totalCollect.toLocaleString('en-IN')}</span>
@@ -347,6 +349,7 @@ export default function History({ userId, username, token, currentUserId, onData
 
         <div className="metric-card withdraw-card">
           <span className="label">
+            <MinusCircle size={12} />
             {selectedMonth === 'ALL' ? 'Total Withdraw' : 'Month Withdraw'}
           </span>
           <span className="value">₹{metrics.totalWithdraw.toLocaleString('en-IN')}</span>
@@ -354,9 +357,10 @@ export default function History({ userId, username, token, currentUserId, onData
 
         <div className="metric-card balance-card" title={selectedMonth === 'ALL' ? 'Total Net Balance' : `Cumulative balance from start up to end of ${selectedMonth}`}>
           <span className="label">
+            <Wallet size={12} />
             {selectedMonth === 'ALL' ? 'Net Balance' : 'Closing Balance'}
           </span>
-          <span className="value" style={{ color: metrics.balance >= 0 ? '#c084fc' : 'var(--error)' }}>
+          <span className="value" style={{ color: metrics.balance >= 0 ? '#a5b4fc' : 'var(--error)' }}>
             ₹{metrics.balance.toLocaleString('en-IN')}
           </span>
         </div>
@@ -506,22 +510,11 @@ export default function History({ userId, username, token, currentUserId, onData
                           </div>
 
                           <div 
-                            style={{
-                              fontSize: '0.72rem',
-                              fontWeight: 600,
-                              color: balanceColor,
-                              background: 'rgba(255, 255, 255, 0.03)',
-                              padding: '0.1rem 0.45rem',
-                              borderRadius: '4px',
-                              border: '1px solid rgba(255, 255, 255, 0.06)',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '0.2rem'
-                            }}
+                            className="balance-chip"
                             title={`Balance after this entry: ₹${balanceAfter.toLocaleString('en-IN')}`}
                           >
-                            <span style={{ color: 'var(--muted)', fontSize: '0.65rem' }}>Bal:</span>
-                            <span>₹{balanceAfter.toLocaleString('en-IN')}</span>
+                            <span style={{ color: 'var(--foreground-dim)', fontSize: '0.65rem' }}>Bal:</span>
+                            <span style={{ color: balanceColor }}>₹{balanceAfter.toLocaleString('en-IN')}</span>
                           </div>
                         </div>
                       </div>

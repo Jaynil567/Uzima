@@ -6,7 +6,7 @@ import History from './components/History'
 import Dashboard from './components/Dashboard'
 import CombineHistory from './components/CombineHistory'
 import TransactionDetailModal from './components/TransactionDetailModal'
-import { Loader2, PlusCircle, Calendar, LayoutDashboard, FileText, LogOut } from 'lucide-react'
+import { Loader2, PlusCircle, Calendar, LayoutDashboard, FileText, LogOut, Sparkles } from 'lucide-react'
 import { getBackendUrl } from './utils/api'
 
 export default function App() {
@@ -157,22 +157,26 @@ export default function App() {
         <>
           {/* Top Bar Header */}
           <header className="shell-header">
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 800, color: '#c084fc', margin: 0 }}>Uzima Hisab</h2>
-            <button 
-              onClick={handleLogoutSuccess} 
-              className="btn btn-sm" 
-              style={{ 
-                width: 'auto', 
-                background: 'rgba(255, 255, 255, 0.03)', 
-                border: '1px solid var(--card-border)', 
-                color: 'var(--muted)', 
-                fontSize: '0.7rem', 
-                padding: '0.4rem 0.8rem',
-                margin: 0
-              }}
-            >
-              <LogOut size={12} style={{ marginRight: '0.25rem' }} /> Log Out
-            </button>
+            <div className="brand-wrapper">
+              <div className="brand-badge">
+                <Sparkles size={16} />
+              </div>
+              <h2 className="brand-title">Uzima Hisāb</h2>
+            </div>
+
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem' }}>
+              <div className="user-status-pill">
+                <span className="online-pulse"></span>
+                <span>{user?.username || 'Partner'}</span>
+              </div>
+              <button 
+                onClick={handleLogoutSuccess} 
+                className="btn-logout" 
+                title="Log Out"
+              >
+                <LogOut size={13} />
+              </button>
+            </div>
           </header>
 
           {/* Independent scroll content block */}

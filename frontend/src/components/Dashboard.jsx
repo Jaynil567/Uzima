@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Users, FileText, ArrowRight, Loader2, AlertCircle, TrendingUp, TrendingDown } from 'lucide-react'
+import { Users, FileText, ArrowRight, Loader2, AlertCircle, TrendingUp, TrendingDown, Wallet, MinusCircle, ChevronRight } from 'lucide-react'
 import { getBackendUrl } from '../utils/api'
 
 export default function Dashboard({ token, onUserClick, onCombineHistoryClick }) {
@@ -216,36 +216,48 @@ export default function Dashboard({ token, onUserClick, onCombineHistoryClick })
       ) : (
         <div>
           {/* Company Totals Cards (4 Grid Cards) */}
-          <div className="metrics-grid" style={{ gridTemplateColumns: 'repeat(2, 1fr)', gap: '0.65rem', marginBottom: '1.75rem' }}>
+          <div className="metrics-grid">
             <div className="metric-card invest-card">
-              <span className="label">Company Invest</span>
+              <span className="label">
+                <TrendingDown size={12} />
+                Company Invest
+              </span>
               <span className="value">
                 ₹{companyTotalInvest.toLocaleString('en-IN')}
               </span>
             </div>
             <div className="metric-card collect-card">
-              <span className="label">Company Collect</span>
+              <span className="label">
+                <TrendingUp size={12} />
+                Company Collect
+              </span>
               <span className="value">
                 ₹{companyTotalCollect.toLocaleString('en-IN')}
               </span>
             </div>
             <div className="metric-card withdraw-card">
-              <span className="label">Partners Withdraw</span>
+              <span className="label">
+                <MinusCircle size={12} />
+                Partners Withdraw
+              </span>
               <span className="value">
                 ₹{companyTotalWithdraw.toLocaleString('en-IN')}
               </span>
             </div>
             <div className="metric-card balance-card">
-              <span className="label">Company Balance</span>
-              <span className="value" style={{ color: companyNetBalance >= 0 ? '#c084fc' : 'var(--error)' }}>
+              <span className="label">
+                <Wallet size={12} />
+                Company Balance
+              </span>
+              <span className="value" style={{ color: companyNetBalance >= 0 ? '#a5b4fc' : 'var(--error)' }}>
                 ₹{companyNetBalance.toLocaleString('en-IN')}
               </span>
             </div>
           </div>
 
           {/* All Users Ledger */}
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, margin: '1.5rem 0 0.75rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Users size={18} style={{ color: '#c084fc' }} /> Partners Balances
+          <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '1.5rem 0 0.85rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}>
+            <Users size={18} style={{ color: 'var(--primary)' }} /> Partners Balances
           </h2>
           
           <div className="users-ledger">
@@ -256,11 +268,17 @@ export default function Dashboard({ token, onUserClick, onCombineHistoryClick })
                 style={{ cursor: 'pointer' }}
                 onClick={() => onUserClick(u.user_id, u.username)}
               >
-                <span className="user-name">
-                  {u.username}
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                  <div className="user-avatar-badge">
+                    {u.username.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '0.98rem', color: '#fff' }}>{u.username}</div>
+                    <div style={{ fontSize: '0.68rem', color: 'var(--foreground-dim)' }}>Tap to view personal ledger</div>
+                  </div>
+                </div>
 
-                <div className="user-totals" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(70px, 1fr))', gap: '0.6rem', alignItems: 'center' }}>
+                <div className="user-totals" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(65px, 1fr))', gap: '0.6rem', alignItems: 'center' }}>
                   <div>
                     <span className="label">Invested</span>
                     <span className="val" style={{ color: 'var(--error)' }}>₹{(u.total_invest || 0).toLocaleString('en-IN')}</span>
@@ -271,11 +289,11 @@ export default function Dashboard({ token, onUserClick, onCombineHistoryClick })
                   </div>
                   <div>
                     <span className="label">Withdrawn</span>
-                    <span className="val" style={{ color: '#f59e0b' }}>₹{(u.total_withdraw || 0).toLocaleString('en-IN')}</span>
+                    <span className="val" style={{ color: 'var(--warning)' }}>₹{(u.total_withdraw || 0).toLocaleString('en-IN')}</span>
                   </div>
                   <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '0.6rem' }}>
                     <span className="label">Net Balance</span>
-                    <span className="val" style={{ color: u.balance >= 0 ? '#c084fc' : 'var(--error)' }}>₹{(u.balance || 0).toLocaleString('en-IN')}</span>
+                    <span className="val" style={{ color: u.balance >= 0 ? '#a5b4fc' : 'var(--error)' }}>₹{(u.balance || 0).toLocaleString('en-IN')}</span>
                   </div>
                 </div>
               </div>
