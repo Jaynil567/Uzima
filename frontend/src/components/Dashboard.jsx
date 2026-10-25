@@ -256,48 +256,69 @@ export default function Dashboard({ token, onUserClick, onCombineHistoryClick })
           </div>
 
           {/* All Users Ledger */}
-          <h2 style={{ fontSize: '1.05rem', fontWeight: 800, margin: '1.5rem 0 0.85rem 0', display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff' }}>
-            <Users size={18} style={{ color: 'var(--primary)' }} /> Partners Balances
-          </h2>
+          <div className="partners-section-title" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', margin: '1.5rem 0 0.85rem 0' }}>
+            <h2 style={{ fontSize: '1.05rem', fontWeight: 800, display: 'flex', alignItems: 'center', gap: '0.5rem', color: '#fff', margin: 0 }}>
+              <Users size={18} style={{ color: 'var(--primary)' }} /> Partners Balances
+            </h2>
+            <span style={{ fontSize: '0.72rem', color: 'var(--foreground-dim)', background: 'rgba(255, 255, 255, 0.04)', padding: '0.2rem 0.6rem', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+              {data.users.length} Partners
+            </span>
+          </div>
           
           <div className="users-ledger">
-            {data.users.map((u) => (
-              <div 
-                key={u.user_id} 
-                className="user-ledger-row"
-                style={{ cursor: 'pointer' }}
-                onClick={() => onUserClick(u.user_id, u.username)}
-              >
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
-                  <div className="user-avatar-badge">
-                    {u.username.charAt(0).toUpperCase()}
-                  </div>
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: '0.98rem', color: '#fff' }}>{u.username}</div>
-                    <div style={{ fontSize: '0.68rem', color: 'var(--foreground-dim)' }}>Tap to view personal ledger</div>
-                  </div>
-                </div>
+            {data.users.map((u) => {
+              const balanceVal = u.balance || 0
+              const isPositive = balanceVal >= 0
+              const formattedBalance = `${balanceVal < 0 ? '-' : ''}₹${Math.abs(balanceVal).toLocaleString('en-IN')}`
 
-                <div className="user-totals" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(65px, 1fr))', gap: '0.6rem', alignItems: 'center' }}>
-                  <div>
-                    <span className="label">Invested</span>
-                    <span className="val" style={{ color: 'var(--error)' }}>₹{(u.total_invest || 0).toLocaleString('en-IN')}</span>
+              return (
+                <div 
+                  key={u.user_id} 
+                  className="partner-card"
+                  onClick={() => onUserClick(u.user_id, u.username)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  {/* Top Row: Avatar + Name (Left) & Net Balance + Arrow (Right) */}
+                  <div className="partner-card-header">
+                    <div className="partner-identity">
+                      <div className="user-avatar-badge">
+                        {u.username.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="partner-meta">
+                        <div className="partner-name">{u.username}</div>
+                        <div className="partner-sub">Tap to view ledger</div>
+                      </div>
+                    </div>
+
+                    <div className="partner-balance-box">
+                      <span className="partner-balance-label">Net Balance</span>
+                      <span className={`partner-balance-val ${isPositive ? 'positive' : 'negative'}`}>
+                        {formattedBalance}
+                      </span>
+                    </div>
+
+                    <ChevronRight size={18} className="partner-arrow" />
                   </div>
-                  <div>
-                    <span className="label">Collected</span>
-                    <span className="val" style={{ color: 'var(--success)' }}>₹{(u.total_collect || 0).toLocaleString('en-IN')}</span>
-                  </div>
-                  <div>
-                    <span className="label">Withdrawn</span>
-                    <span className="val" style={{ color: 'var(--warning)' }}>₹{(u.total_withdraw || 0).toLocaleString('en-IN')}</span>
-                  </div>
-                  <div style={{ borderLeft: '1px solid rgba(255,255,255,0.08)', paddingLeft: '0.6rem' }}>
-                    <span className="label">Net Balance</span>
-                    <span className="val" style={{ color: u.balance >= 0 ? '#a5b4fc' : 'var(--error)' }}>₹{(u.balance || 0).toLocaleString('en-IN')}</span>
+
+                  {/* Bottom Row: 3 Equal Breakdown Metrics (Invested | Collected | Withdrawn) */}
+                  <div className="partner-card-metrics">
+                    <div className="partner-metric-item">
+                      <span className="metric-tag">Invested</span>
+                      <span className="metric-amt invest">₹{(u.total_invest || 0).toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="partner-metric-item">
+                      <span className="metric-tag">Collected</span>
+                      <span className="metric-amt collect">₹{(u.total_collect || 0).toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="partner-metric-item">
+                      <span className="metric-tag">Withdrawn</span>
+                      <span className="metric-amt withdraw">₹{(u.total_withdraw || 0).toLocaleString('en-IN')}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           <div style={{ display: 'flex', gap: '0.75rem', marginTop: '1.25rem', marginBottom: '2.5rem' }}>
