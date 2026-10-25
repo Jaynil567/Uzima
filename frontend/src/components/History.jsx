@@ -112,6 +112,31 @@ export default function History({ userId, username, token, currentUserId, onData
     return { totalInvest, totalCollect, totalWithdraw, balance }
   }, [activeTransactions, cumulativeTransactions])
 
+  // Compute running balance after each transaction chronologically (oldest to newest)
+  const runningBalancesMap = useMemo(() => {
+    const sorted = [...transactions].sort((a, b) => {
+      const diff = new Date(a.date).getTime() - new Date(b.date).getTime()
+      if (diff !== 0) return diff
+      return a.id - b.id
+    })
+
+    let currentBalance = 0
+    const map = {}
+    sorted.forEach((tx) => {
+      const prevBal = currentBalance
+      if (tx.type === 'COLLECT') {
+        currentBalance += tx.amount
+      } else if (tx.type === 'INVEST' || tx.type === 'WITHDRAW') {
+        currentBalance -= tx.amount
+      }
+      map[tx.id] = {
+        balanceBefore: prevBal,
+        balanceAfter: currentBalance
+      }
+    })
+    return map
+  }, [transactions])
+
   // Group active transactions by month for structured rendering
   const groupedTransactions = useMemo(() => {
     const grouped = {}
@@ -373,16 +398,27 @@ export default function History({ userId, username, token, currentUserId, onData
                     const amountColor = isInvest ? 'var(--error)' : isWithdraw ? '#f59e0b' : 'var(--success)'
                     const amountPrefix = (isInvest || isWithdraw) ? '-' : '+'
 
+                    const balInfo = runningBalancesMap[tx.id]
+                    const balanceAfter = balInfo?.balanceAfter ?? 0
+                    const balanceBefore = balInfo?.balanceBefore ?? 0
+                    const balanceColor = balanceAfter >= 0 ? '#c084fc' : 'var(--error)'
+
+                    const txWithBalances = {
+                      ...tx,
+                      balanceAfter,
+                      balanceBefore
+                    }
+
                     return (
                       <div 
                         key={tx.id} 
                         className={`history-item ${itemClass}`}
                         style={{ padding: '0.85rem 1rem', cursor: 'pointer' }}
-                        onClick={() => onSelectTransaction && onSelectTransaction(tx)}
+                        onClick={() => onSelectTransaction && onSelectTransaction(txWithBalances)}
                       >
-                        <div className="history-info">
-                          <span className="history-desc">{tx.notes}</span>
-                          <div className="history-info-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <div className="history-info" style={{ flex: 1, minWidth: 0, paddingRight: '0.5rem' }}>
+                          <span className="history-desc" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.notes}</span>
+                          <div className="history-info-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.2rem' }}>
                             <span className="history-date" style={{ color: 'rgba(255,255,255,0.45)' }}>{formatDate(tx.date)}</span>
                             {isWithdraw && (
                               <span style={{ fontSize: '0.65rem', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 600 }}>
@@ -392,35 +428,58 @@ export default function History({ userId, username, token, currentUserId, onData
                           </div>
                         </div>
 
-                        <div className="history-right">
-                          <span className="history-amount" style={{ color: amountColor }}>
-                            {amountPrefix} ₹{tx.amount.toLocaleString('en-IN')}
-                          </span>
-                          
-                          {isSelf && (
-                            <div style={{ display: 'flex', gap: '0.35rem', marginLeft: '0.5rem' }}>
-                              <button 
-                                className="btn btn-primary btn-sm"
-                                style={{ padding: '0.35rem', background: 'rgba(147, 51, 234, 0.1)', border: '1px solid var(--card-border-glow)', color: '#c084fc' }}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  openEditModal(tx)
-                                }}
-                              >
-                                <Edit size={12} />
-                              </button>
-                              <button 
-                                className="btn btn-danger btn-sm"
-                                style={{ padding: '0.35rem' }}
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  handleDelete(tx.id)
-                                }}
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          )}
+                        <div className="history-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: '0.25rem', flexShrink: 0 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                            <span className="history-amount" style={{ color: amountColor, fontWeight: 700 }}>
+                              {amountPrefix} ₹{tx.amount.toLocaleString('en-IN')}
+                            </span>
+                            
+                            {isSelf && (
+                              <div style={{ display: 'flex', gap: '0.3rem', marginLeft: '0.25rem' }}>
+                                <button 
+                                  className="btn btn-primary btn-sm"
+                                  style={{ padding: '0.3rem', background: 'rgba(147, 51, 234, 0.1)', border: '1px solid var(--card-border-glow)', color: '#c084fc', width: 'auto', minWidth: 'auto' }}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    openEditModal(tx)
+                                  }}
+                                  title="Edit"
+                                >
+                                  <Edit size={12} />
+                                </button>
+                                <button 
+                                  className="btn btn-danger btn-sm"
+                                  style={{ padding: '0.3rem', width: 'auto', minWidth: 'auto' }}
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    handleDelete(tx.id)
+                                  }}
+                                  title="Delete"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            )}
+                          </div>
+
+                          <div 
+                            style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              color: balanceColor,
+                              background: 'rgba(255, 255, 255, 0.03)',
+                              padding: '0.1rem 0.45rem',
+                              borderRadius: '4px',
+                              border: '1px solid rgba(255, 255, 255, 0.06)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.2rem'
+                            }}
+                            title={`Balance after this entry: ₹${balanceAfter.toLocaleString('en-IN')}`}
+                          >
+                            <span style={{ color: 'var(--muted)', fontSize: '0.65rem' }}>Bal:</span>
+                            <span>₹{balanceAfter.toLocaleString('en-IN')}</span>
+                          </div>
                         </div>
                       </div>
                     )

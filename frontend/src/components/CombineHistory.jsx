@@ -61,6 +61,35 @@ export default function CombineHistory({ token, onSelectTransaction }) {
     return months
   }, [transactions])
 
+  // Compute running balance per user chronologically (oldest first)
+  const runningBalancesMap = useMemo(() => {
+    const sorted = [...transactions].sort((a, b) => {
+      const diff = new Date(a.date).getTime() - new Date(b.date).getTime()
+      if (diff !== 0) return diff
+      return a.id - b.id
+    })
+
+    const userBalances = {}
+    const map = {}
+    sorted.forEach((tx) => {
+      const uKey = tx.user_id || tx.username
+      if (userBalances[uKey] === undefined) userBalances[uKey] = 0
+      const prevBal = userBalances[uKey]
+
+      if (tx.type === 'COLLECT') {
+        userBalances[uKey] += tx.amount
+      } else if (tx.type === 'INVEST' || tx.type === 'WITHDRAW') {
+        userBalances[uKey] -= tx.amount
+      }
+
+      map[tx.id] = {
+        balanceBefore: prevBal,
+        balanceAfter: userBalances[uKey]
+      }
+    })
+    return map
+  }, [transactions])
+
   // Apply filters and sorting
   const filteredTransactions = useMemo(() => {
     let list = [...transactions]
@@ -257,16 +286,27 @@ export default function CombineHistory({ token, onSelectTransaction }) {
                     const amountColor = isInvest ? 'var(--error)' : isWithdraw ? '#f59e0b' : 'var(--success)'
                     const amountPrefix = (isInvest || isWithdraw) ? '-' : '+'
 
+                    const balInfo = runningBalancesMap[tx.id]
+                    const balanceAfter = balInfo?.balanceAfter ?? 0
+                    const balanceBefore = balInfo?.balanceBefore ?? 0
+                    const balanceColor = balanceAfter >= 0 ? '#c084fc' : 'var(--error)'
+
+                    const txWithBalances = {
+                      ...tx,
+                      balanceAfter,
+                      balanceBefore
+                    }
+
                     return (
                       <div 
                         key={tx.id} 
                         className={`history-item ${itemClass}`}
                         style={{ padding: '0.85rem 1rem', cursor: 'pointer' }}
-                        onClick={() => onSelectTransaction && onSelectTransaction(tx)}
+                        onClick={() => onSelectTransaction && onSelectTransaction(txWithBalances)}
                       >
-                        <div className="history-info">
-                          <span className="history-desc">{tx.notes}</span>
-                          <div className="history-info-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                        <div className="history-info" style={{ flex: 1, minWidth: 0, paddingRight: '0.5rem' }}>
+                          <span className="history-desc" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.notes}</span>
+                          <div className="history-info-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.2rem' }}>
                             <span className="history-user" style={{ color: '#c084fc', fontWeight: 600 }}>{tx.username}</span>
                             <span className="history-date" style={{ color: 'rgba(255,255,255,0.45)' }}>• {formatDate(tx.date)}</span>
                             {isWithdraw && (
@@ -277,10 +317,28 @@ export default function CombineHistory({ token, onSelectTransaction }) {
                           </div>
                         </div>
 
-                        <div className="history-right" style={{ gap: '0.5rem' }}>
-                          <span className="history-amount" style={{ color: amountColor }}>
+                        <div className="history-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: '0.25rem', flexShrink: 0 }}>
+                          <span className="history-amount" style={{ color: amountColor, fontWeight: 700 }}>
                             {amountPrefix} ₹{tx.amount.toLocaleString('en-IN')}
                           </span>
+                          <div 
+                            style={{
+                              fontSize: '0.72rem',
+                              fontWeight: 600,
+                              color: balanceColor,
+                              background: 'rgba(255, 255, 255, 0.03)',
+                              padding: '0.1rem 0.45rem',
+                              borderRadius: '4px',
+                              border: '1px solid rgba(255, 255, 255, 0.06)',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '0.2rem'
+                            }}
+                            title={`${tx.username}'s balance after this entry: ₹${balanceAfter.toLocaleString('en-IN')}`}
+                          >
+                            <span style={{ color: 'var(--muted)', fontSize: '0.65rem' }}>Bal:</span>
+                            <span>₹{balanceAfter.toLocaleString('en-IN')}</span>
+                          </div>
                         </div>
                       </div>
                     )

@@ -258,6 +258,51 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
                 </div>
               </div>
 
+              {/* Running Balance Trail Card */}
+              {txData.balanceAfter !== undefined && (
+                <div style={{
+                  padding: '0.9rem 1rem',
+                  borderRadius: 'var(--radius-sm)',
+                  background: 'rgba(147, 51, 234, 0.05)',
+                  border: '1px solid rgba(147, 51, 234, 0.18)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '0.75rem'
+                }}>
+                  {txData.balanceBefore !== undefined && (
+                    <div style={{ flex: 1 }}>
+                      <div style={{ color: 'var(--muted)', fontSize: '0.68rem', textTransform: 'uppercase', fontWeight: 600, marginBottom: '0.2rem' }}>
+                        Previous Balance
+                      </div>
+                      <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--muted)' }}>
+                        ₹{Number(txData.balanceBefore).toLocaleString('en-IN')}
+                      </div>
+                    </div>
+                  )}
+
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    color: '#c084fc',
+                    padding: '0 0.25rem',
+                    fontWeight: 700,
+                    fontSize: '1rem'
+                  }}>
+                    →
+                  </div>
+
+                  <div style={{ flex: 1, textAlign: 'right' }}>
+                    <div style={{ color: '#c084fc', fontSize: '0.68rem', textTransform: 'uppercase', fontWeight: 700, marginBottom: '0.2rem' }}>
+                      Balance After Entry
+                    </div>
+                    <div style={{ fontWeight: 800, fontSize: '1.1rem', color: txData.balanceAfter >= 0 ? '#c084fc' : 'var(--error)' }}>
+                      ₹{Number(txData.balanceAfter).toLocaleString('en-IN')}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {/* Metadata / ID */}
               <div style={{
                 display: 'flex',

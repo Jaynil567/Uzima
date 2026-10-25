@@ -199,6 +199,22 @@ def transaction_detail_view(request, pk):
         return Response({'error': 'Transaction not found'}, status=status.HTTP_404_NOT_FOUND)
 
     if request.method == 'GET':
+        from django.db.models import Q
+        user_txs_up_to = Transaction.objects.filter(
+            user=t.user
+        ).filter(
+            Q(date__lt=t.date) | Q(date=t.date, id__lte=t.id)
+        )
+        collect_sum = sum(float(x.amount) for x in user_txs_up_to.filter(type='COLLECT'))
+        invest_sum = sum(float(x.amount) for x in user_txs_up_to.filter(type='INVEST'))
+        withdraw_sum = sum(float(x.amount) for x in user_txs_up_to.filter(type='WITHDRAW'))
+        balance_after = collect_sum - invest_sum - withdraw_sum
+
+        if t.type == 'COLLECT':
+            balance_before = balance_after - float(t.amount)
+        else:
+            balance_before = balance_after + float(t.amount)
+
         return Response({
             'transaction': {
                 'id': t.id,
@@ -208,7 +224,9 @@ def transaction_detail_view(request, pk):
                 'amount': float(t.amount),
                 'notes': t.notes,
                 'date': t.date.isoformat(),
-                'updated_at': t.updated_at.isoformat()
+                'updated_at': t.updated_at.isoformat(),
+                'balanceAfter': balance_after,
+                'balanceBefore': balance_before
             }
         }, status=status.HTTP_200_OK)
         
@@ -334,15 +352,24 @@ def send_fcm_notification(tx):
             display_type = "Personal Withdrawal (-)"
         else:
             display_type = "Cash Collection (+)"
+        
+        # Calculate balance after this transaction for tx.user
+        user_txs = Transaction.objects.filter(user=tx.user)
+        user_collect = sum(float(x.amount) for x in user_txs.filter(type='COLLECT'))
+        user_invest = sum(float(x.amount) for x in user_txs.filter(type='INVEST'))
+        user_withdraw = sum(float(x.amount) for x in user_txs.filter(type='WITHDRAW'))
+        curr_balance = user_collect - user_invest - user_withdraw
+
         notification_title = "New Transaction Logged"
-        notification_body = f"{display_type} of ₹{tx.amount} for: {tx.notes} (by {tx.user.username})"
+        notification_body = f"{display_type} of ₹{tx.amount} for: {tx.notes} (by {tx.user.username}) • Bal: ₹{curr_balance:,.2f}"
 
         data_payload = {
             'tx_id': str(tx.id),
             'type': tx.type,
             'amount': str(tx.amount),
             'notes': tx.notes,
-            'username': tx.user.username
+            'username': tx.user.username,
+            'balance_after': str(curr_balance)
         }
 
         # High-priority Android notification configuration for background delivery
