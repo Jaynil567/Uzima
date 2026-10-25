@@ -8,9 +8,13 @@ class Transaction(models.Model):
         ('INVEST', 'Investment'),
         ('COLLECT', 'Cash Collection'),
         ('WITHDRAW', 'Withdrawal'),
+        ('TRANSFER', 'Partner Transfer'),
     )
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='transactions')
-    type = models.CharField(max_length=10, choices=TRANSACTION_TYPES)
+    related_user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='related_transfers')
+    transfer_direction = models.CharField(max_length=5, choices=(('OUT', 'Out'), ('IN', 'In')), null=True, blank=True)
+    transfer_link_id = models.CharField(max_length=64, null=True, blank=True, db_index=True)
+    type = models.CharField(max_length=15, choices=TRANSACTION_TYPES)
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     notes = models.TextField()
     date = models.DateTimeField(default=timezone.now)

@@ -107,7 +107,9 @@ export default function History({ userId, username, token, currentUserId, onData
     const cumInvest = cumulativeTransactions.filter(t => t.type === 'INVEST').reduce((acc, t) => acc + t.amount, 0)
     const cumCollect = cumulativeTransactions.filter(t => t.type === 'COLLECT').reduce((acc, t) => acc + t.amount, 0)
     const cumWithdraw = cumulativeTransactions.filter(t => t.type === 'WITHDRAW').reduce((acc, t) => acc + t.amount, 0)
-    const balance = cumCollect - cumInvest - cumWithdraw
+    const cumTransferIn = cumulativeTransactions.filter(t => t.type === 'TRANSFER' && t.transfer_direction === 'IN').reduce((acc, t) => acc + t.amount, 0)
+    const cumTransferOut = cumulativeTransactions.filter(t => t.type === 'TRANSFER' && t.transfer_direction === 'OUT').reduce((acc, t) => acc + t.amount, 0)
+    const balance = (cumCollect + cumTransferIn) - (cumInvest + cumWithdraw + cumTransferOut)
 
     return { totalInvest, totalCollect, totalWithdraw, balance }
   }, [activeTransactions, cumulativeTransactions])
@@ -128,6 +130,12 @@ export default function History({ userId, username, token, currentUserId, onData
         currentBalance += tx.amount
       } else if (tx.type === 'INVEST' || tx.type === 'WITHDRAW') {
         currentBalance -= tx.amount
+      } else if (tx.type === 'TRANSFER') {
+        if (tx.transfer_direction === 'IN') {
+          currentBalance += tx.amount
+        } else {
+          currentBalance -= tx.amount
+        }
       }
       map[tx.id] = {
         balanceBefore: prevBal,
@@ -264,8 +272,9 @@ export default function History({ userId, username, token, currentUserId, onData
     const c = txList.filter(t => t.type === 'COLLECT').reduce((acc, t) => acc + t.amount, 0)
     const i = txList.filter(t => t.type === 'INVEST').reduce((acc, t) => acc + t.amount, 0)
     const w = txList.filter(t => t.type === 'WITHDRAW').reduce((acc, t) => acc + t.amount, 0)
-    const net = c - i - w
-    return net
+    const tin = txList.filter(t => t.type === 'TRANSFER' && t.transfer_direction === 'IN').reduce((acc, t) => acc + t.amount, 0)
+    const tout = txList.filter(t => t.type === 'TRANSFER' && t.transfer_direction === 'OUT').reduce((acc, t) => acc + t.amount, 0)
+    return (c + tin) - (i + w + tout)
   }
 
   return (
@@ -394,9 +403,31 @@ export default function History({ userId, username, token, currentUserId, onData
                   {txList.map((tx) => {
                     const isInvest = tx.type === 'INVEST'
                     const isWithdraw = tx.type === 'WITHDRAW'
-                    const itemClass = isInvest ? 'type-expense' : isWithdraw ? 'type-withdraw' : 'type-income'
-                    const amountColor = isInvest ? 'var(--error)' : isWithdraw ? '#f59e0b' : 'var(--success)'
-                    const amountPrefix = (isInvest || isWithdraw) ? '-' : '+'
+                    const isTransfer = tx.type === 'TRANSFER'
+                    const isTransferOut = isTransfer && tx.transfer_direction === 'OUT'
+                    const isTransferIn = isTransfer && tx.transfer_direction === 'IN'
+
+                    let itemClass = 'type-income'
+                    let amountColor = 'var(--success)'
+                    let amountPrefix = '+'
+
+                    if (isInvest) {
+                      itemClass = 'type-expense'
+                      amountColor = 'var(--error)'
+                      amountPrefix = '-'
+                    } else if (isWithdraw) {
+                      itemClass = 'type-withdraw'
+                      amountColor = '#f59e0b'
+                      amountPrefix = '-'
+                    } else if (isTransferOut) {
+                      itemClass = 'type-transfer-out'
+                      amountColor = '#38bdf8'
+                      amountPrefix = '-'
+                    } else if (isTransferIn) {
+                      itemClass = 'type-transfer-in'
+                      amountColor = '#38bdf8'
+                      amountPrefix = '+'
+                    }
 
                     const balInfo = runningBalancesMap[tx.id]
                     const balanceAfter = balInfo?.balanceAfter ?? 0
@@ -417,12 +448,24 @@ export default function History({ userId, username, token, currentUserId, onData
                         onClick={() => onSelectTransaction && onSelectTransaction(txWithBalances)}
                       >
                         <div className="history-info" style={{ flex: 1, minWidth: 0, paddingRight: '0.5rem' }}>
-                          <span className="history-desc" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.notes}</span>
+                          <span className="history-desc" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {tx.notes}
+                          </span>
                           <div className="history-info-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap', marginTop: '0.2rem' }}>
                             <span className="history-date" style={{ color: 'rgba(255,255,255,0.45)' }}>{formatDate(tx.date)}</span>
                             {isWithdraw && (
                               <span style={{ fontSize: '0.65rem', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 600 }}>
                                 Withdrawal
+                              </span>
+                            )}
+                            {isTransferOut && (
+                              <span style={{ fontSize: '0.65rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '0.1rem 0.45rem', borderRadius: '4px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+                                <span>➔</span> Gave to {tx.related_username || 'Partner'}
+                              </span>
+                            )}
+                            {isTransferIn && (
+                              <span style={{ fontSize: '0.65rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '0.1rem 0.45rem', borderRadius: '4px', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '0.2rem' }}>
+                                <span>←</span> From {tx.related_username || 'Partner'}
                               </span>
                             )}
                           </div>
@@ -434,7 +477,7 @@ export default function History({ userId, username, token, currentUserId, onData
                               {amountPrefix} ₹{tx.amount.toLocaleString('en-IN')}
                             </span>
                             
-                            {isSelf && (
+                            {isSelf && (!isTransfer || isTransferOut) && (
                               <div style={{ display: 'flex', gap: '0.3rem', marginLeft: '0.25rem' }}>
                                 <button 
                                   className="btn btn-primary btn-sm"
@@ -514,32 +557,50 @@ export default function History({ userId, username, token, currentUserId, onData
             <form onSubmit={handleEditSubmit}>
               <div className="form-group">
                 <label>Type</label>
-                <div className="tab-group" style={{ marginBottom: 0, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.35rem' }}>
-                  <button
-                    type="button"
-                    className={`tab-btn ${editType === 'INVEST' ? 'active' : ''}`}
-                    style={{ background: editType === 'INVEST' ? 'var(--error)' : '', boxShadow: 'none', padding: '0.4rem 0.2rem', fontSize: '0.75rem' }}
-                    onClick={() => setEditType('INVEST')}
-                  >
-                    <TrendingDown size={11} /> Invest
-                  </button>
-                  <button
-                    type="button"
-                    className={`tab-btn ${editType === 'COLLECT' ? 'active' : ''}`}
-                    style={{ background: editType === 'COLLECT' ? 'var(--success)' : '', boxShadow: 'none', padding: '0.4rem 0.2rem', fontSize: '0.75rem' }}
-                    onClick={() => setEditType('COLLECT')}
-                  >
-                    <TrendingUp size={11} /> Collect
-                  </button>
-                  <button
-                    type="button"
-                    className={`tab-btn ${editType === 'WITHDRAW' ? 'active' : ''}`}
-                    style={{ background: editType === 'WITHDRAW' ? '#f59e0b' : '', boxShadow: 'none', padding: '0.4rem 0.2rem', fontSize: '0.75rem' }}
-                    onClick={() => setEditType('WITHDRAW')}
-                  >
-                    <TrendingDown size={11} /> Withdraw
-                  </button>
-                </div>
+                {selectedTx?.type === 'TRANSFER' ? (
+                  <div style={{
+                    padding: '0.6rem 0.85rem',
+                    background: 'rgba(56, 189, 248, 0.1)',
+                    border: '1px solid rgba(56, 189, 248, 0.25)',
+                    borderRadius: 'var(--radius-sm)',
+                    color: '#38bdf8',
+                    fontSize: '0.85rem',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem'
+                  }}>
+                    <span>➔</span>
+                    <span>Partner Transfer to {selectedTx.related_username || 'Partner'}</span>
+                  </div>
+                ) : (
+                  <div className="tab-group" style={{ marginBottom: 0, display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.35rem' }}>
+                    <button
+                      type="button"
+                      className={`tab-btn ${editType === 'INVEST' ? 'active' : ''}`}
+                      style={{ background: editType === 'INVEST' ? 'var(--error)' : '', boxShadow: 'none', padding: '0.4rem 0.2rem', fontSize: '0.75rem' }}
+                      onClick={() => setEditType('INVEST')}
+                    >
+                      <TrendingDown size={11} /> Invest
+                    </button>
+                    <button
+                      type="button"
+                      className={`tab-btn ${editType === 'COLLECT' ? 'active' : ''}`}
+                      style={{ background: editType === 'COLLECT' ? 'var(--success)' : '', boxShadow: 'none', padding: '0.4rem 0.2rem', fontSize: '0.75rem' }}
+                      onClick={() => setEditType('COLLECT')}
+                    >
+                      <TrendingUp size={11} /> Collect
+                    </button>
+                    <button
+                      type="button"
+                      className={`tab-btn ${editType === 'WITHDRAW' ? 'active' : ''}`}
+                      style={{ background: editType === 'WITHDRAW' ? '#f59e0b' : '', boxShadow: 'none', padding: '0.4rem 0.2rem', fontSize: '0.75rem' }}
+                      onClick={() => setEditType('WITHDRAW')}
+                    >
+                      <TrendingDown size={11} /> Withdraw
+                    </button>
+                  </div>
+                )}
               </div>
 
               <div className="form-group">

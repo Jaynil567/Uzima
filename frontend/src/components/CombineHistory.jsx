@@ -80,6 +80,12 @@ export default function CombineHistory({ token, onSelectTransaction }) {
         userBalances[uKey] += tx.amount
       } else if (tx.type === 'INVEST' || tx.type === 'WITHDRAW') {
         userBalances[uKey] -= tx.amount
+      } else if (tx.type === 'TRANSFER') {
+        if (tx.transfer_direction === 'IN') {
+          userBalances[uKey] += tx.amount
+        } else {
+          userBalances[uKey] -= tx.amount
+        }
       }
 
       map[tx.id] = {
@@ -226,6 +232,7 @@ export default function CombineHistory({ token, onSelectTransaction }) {
             <option value="INVEST">Invest</option>
             <option value="COLLECT">Collect</option>
             <option value="WITHDRAW">Withdraw</option>
+            <option value="TRANSFER">Transfer</option>
           </select>
 
           {/* Sort Order */}
@@ -282,9 +289,10 @@ export default function CombineHistory({ token, onSelectTransaction }) {
                   {txList.map((tx) => {
                     const isInvest = tx.type === 'INVEST'
                     const isWithdraw = tx.type === 'WITHDRAW'
-                    const itemClass = isInvest ? 'type-expense' : isWithdraw ? 'type-withdraw' : 'type-income'
-                    const amountColor = isInvest ? 'var(--error)' : isWithdraw ? '#f59e0b' : 'var(--success)'
-                    const amountPrefix = (isInvest || isWithdraw) ? '-' : '+'
+                    const isTransfer = tx.type === 'TRANSFER'
+                    const itemClass = isInvest ? 'type-expense' : isWithdraw ? 'type-withdraw' : isTransfer ? 'type-transfer' : 'type-income'
+                    const amountColor = isInvest ? 'var(--error)' : isWithdraw ? '#f59e0b' : isTransfer ? '#38bdf8' : 'var(--success)'
+                    const amountPrefix = (isInvest || isWithdraw) ? '-' : isTransfer ? '' : '+'
 
                     const balInfo = runningBalancesMap[tx.id]
                     const balanceAfter = balInfo?.balanceAfter ?? 0
@@ -307,11 +315,24 @@ export default function CombineHistory({ token, onSelectTransaction }) {
                         <div className="history-info" style={{ flex: 1, minWidth: 0, paddingRight: '0.5rem' }}>
                           <span className="history-desc" style={{ display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{tx.notes}</span>
                           <div className="history-info-meta" style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap', marginTop: '0.2rem' }}>
-                            <span className="history-user" style={{ color: '#c084fc', fontWeight: 600 }}>{tx.username}</span>
+                            {isTransfer ? (
+                              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '0.3rem', fontWeight: 700, fontSize: '0.85rem' }}>
+                                <span style={{ color: '#38bdf8' }}>{tx.username}</span>
+                                <span style={{ color: 'var(--muted)', fontSize: '0.75rem' }}>➔</span>
+                                <span style={{ color: '#38bdf8' }}>{tx.related_username || 'Partner'}</span>
+                              </span>
+                            ) : (
+                              <span className="history-user" style={{ color: '#c084fc', fontWeight: 600 }}>{tx.username}</span>
+                            )}
                             <span className="history-date" style={{ color: 'rgba(255,255,255,0.45)' }}>• {formatDate(tx.date)}</span>
                             {isWithdraw && (
                               <span style={{ fontSize: '0.65rem', background: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 600 }}>
                                 Withdrawal
+                              </span>
+                            )}
+                            {isTransfer && (
+                              <span style={{ fontSize: '0.65rem', background: 'rgba(56, 189, 248, 0.15)', color: '#38bdf8', padding: '0.1rem 0.4rem', borderRadius: '4px', fontWeight: 700 }}>
+                                Transfer
                               </span>
                             )}
                           </div>
@@ -319,7 +340,7 @@ export default function CombineHistory({ token, onSelectTransaction }) {
 
                         <div className="history-right" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', justifyContent: 'center', gap: '0.25rem', flexShrink: 0 }}>
                           <span className="history-amount" style={{ color: amountColor, fontWeight: 700 }}>
-                            {amountPrefix} ₹{tx.amount.toLocaleString('en-IN')}
+                            {amountPrefix}{amountPrefix ? ' ' : ''}₹{tx.amount.toLocaleString('en-IN')}
                           </span>
                           <div 
                             style={{

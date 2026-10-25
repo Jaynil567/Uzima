@@ -180,6 +180,7 @@ export default function App() {
             {activeScreen === 'home' && (
               <Home 
                 token={token} 
+                currentUser={user}
                 onTransactionLogged={() => {}} 
               />
             )}

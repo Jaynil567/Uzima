@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { X, Calendar, User, FileText, ArrowDownRight, ArrowUpRight, MinusCircle, Hash, Clock, Loader2 } from 'lucide-react'
+import { X, Calendar, User, FileText, ArrowDownRight, ArrowUpRight, MinusCircle, ArrowRightLeft, Hash, Clock, Loader2 } from 'lucide-react'
 import { getBackendUrl } from '../utils/api'
 
 export default function TransactionDetailModal({ transaction, txId, token, onClose }) {
@@ -41,11 +41,21 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
 
   const isInvest = txData?.type === 'INVEST'
   const isWithdraw = txData?.type === 'WITHDRAW'
-  const badgeColor = isInvest ? 'var(--error)' : isWithdraw ? '#f59e0b' : 'var(--success)'
-  const badgeBg = isInvest ? 'var(--error-bg)' : isWithdraw ? 'rgba(245, 158, 11, 0.1)' : 'rgba(16, 185, 129, 0.1)'
-  const badgeBorder = isInvest ? 'var(--error-border)' : isWithdraw ? 'rgba(245, 158, 11, 0.25)' : 'rgba(16, 185, 129, 0.2)'
-  const pillBg = isInvest ? 'rgba(244, 63, 94, 0.15)' : isWithdraw ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)'
-  const typeLabel = isInvest ? 'INVESTMENT (-)' : isWithdraw ? 'PERSONAL WITHDRAWAL (-)' : 'CASH COLLECTION (+)'
+  const isTransfer = txData?.type === 'TRANSFER'
+  const isTransferOut = isTransfer && txData?.transfer_direction === 'OUT'
+  const isTransferIn = isTransfer && txData?.transfer_direction === 'IN'
+
+  const badgeColor = isInvest ? 'var(--error)' : isWithdraw ? '#f59e0b' : isTransfer ? '#38bdf8' : 'var(--success)'
+  const badgeBg = isInvest ? 'var(--error-bg)' : isWithdraw ? 'rgba(245, 158, 11, 0.1)' : isTransfer ? 'rgba(56, 189, 248, 0.1)' : 'rgba(16, 185, 129, 0.1)'
+  const badgeBorder = isInvest ? 'var(--error-border)' : isWithdraw ? 'rgba(245, 158, 11, 0.25)' : isTransfer ? 'rgba(56, 189, 248, 0.25)' : 'rgba(16, 185, 129, 0.2)'
+  const pillBg = isInvest ? 'rgba(244, 63, 94, 0.15)' : isWithdraw ? 'rgba(245, 158, 11, 0.15)' : isTransfer ? 'rgba(56, 189, 248, 0.15)' : 'rgba(16, 185, 129, 0.15)'
+
+  let typeLabel = 'CASH COLLECTION (+)'
+  if (isInvest) typeLabel = 'INVESTMENT (-)'
+  else if (isWithdraw) typeLabel = 'PERSONAL WITHDRAWAL (-)'
+  else if (isTransferOut) typeLabel = `TRANSFER OUT (➔ ${txData.related_username?.toUpperCase() || 'PARTNER'}) (-)`
+  else if (isTransferIn) typeLabel = `TRANSFER IN (← ${txData.related_username?.toUpperCase() || 'PARTNER'}) (+)`
+  else if (isTransfer) typeLabel = `PARTNER TRANSFER (${txData.username?.toUpperCase()} ➔ ${txData.related_username?.toUpperCase() || 'PARTNER'})`
 
   const formatDate = (dateStr) => {
     if (!dateStr) return '-'
@@ -182,7 +192,7 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
                   background: pillBg,
                   color: badgeColor
                 }}>
-                  {isInvest ? <ArrowDownRight size={14} /> : isWithdraw ? <MinusCircle size={14} /> : <ArrowUpRight size={14} />}
+                  {isInvest ? <ArrowDownRight size={14} /> : isWithdraw ? <MinusCircle size={14} /> : isTransfer ? <ArrowRightLeft size={14} /> : <ArrowUpRight size={14} />}
                   {typeLabel}
                 </div>
 
@@ -198,8 +208,8 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
               </div>
 
               {/* Information Grid */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.85rem' }}>
-                {/* Partner */}
+              <div style={{ display: 'grid', gridTemplateColumns: isTransfer ? '1fr 1fr' : '1fr 1fr', gap: '0.85rem' }}>
+                {/* Partner / Sender */}
                 <div style={{
                   padding: '0.85rem 1rem',
                   borderRadius: 'var(--radius-sm)',
@@ -208,28 +218,67 @@ export default function TransactionDetailModal({ transaction, txId, token, onClo
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--muted)', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
                     <User size={13} />
-                    <span>Logged By</span>
+                    <span>{isTransfer ? 'From (Sender)' : 'Logged By'}</span>
                   </div>
                   <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--foreground)' }}>
                     {txData.username || 'Partner'}
                   </div>
                 </div>
 
-                {/* Date */}
-                <div style={{
-                  padding: '0.85rem 1rem',
-                  borderRadius: 'var(--radius-sm)',
-                  background: 'rgba(255, 255, 255, 0.02)',
-                  border: '1px solid var(--card-border)'
-                }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--muted)', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
-                    <Calendar size={13} />
-                    <span>Entry Date</span>
+                {/* Receiver (if transfer) or Date */}
+                {isTransfer ? (
+                  <div style={{
+                    padding: '0.85rem 1rem',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'rgba(56, 189, 248, 0.04)',
+                    border: '1px solid rgba(56, 189, 248, 0.25)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: '#38bdf8', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
+                      <User size={13} />
+                      <span>To (Receiver)</span>
+                    </div>
+                    <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#38bdf8' }}>
+                      {txData.related_username || 'Partner'}
+                    </div>
                   </div>
-                  <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--foreground)' }}>
-                    {formatDate(txData.date)}
+                ) : (
+                  <div style={{
+                    padding: '0.85rem 1rem',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    border: '1px solid var(--card-border)'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--muted)', fontSize: '0.75rem', marginBottom: '0.25rem' }}>
+                      <Calendar size={13} />
+                      <span>Entry Date</span>
+                    </div>
+                    <div style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--foreground)' }}>
+                      {formatDate(txData.date)}
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* If transfer, show date row below */}
+                {isTransfer && (
+                  <div style={{
+                    gridColumn: '1 / -1',
+                    padding: '0.65rem 1rem',
+                    borderRadius: 'var(--radius-sm)',
+                    background: 'rgba(255, 255, 255, 0.02)',
+                    border: '1px solid var(--card-border)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--muted)', fontSize: '0.75rem' }}>
+                      <Calendar size={13} />
+                      <span>Entry Date</span>
+                    </div>
+                    <div style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--foreground)' }}>
+                      {formatDate(txData.date)}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Notes / Narration */}

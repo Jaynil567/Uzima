@@ -11,6 +11,8 @@ from datetime import timedelta
 from django.utils import timezone
 from django.http import JsonResponse
 import os
+import uuid
+from django.db import transaction as db_transaction
 from django.conf import settings
 import firebase_admin
 from firebase_admin import credentials, messaging
@@ -117,6 +119,18 @@ def user_view(request):
         }
     }, status=status.HTTP_200_OK)
 
+@api_view(['GET'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def partners_list_view(request):
+    partners = User.objects.all().order_by('username')
+    return Response({
+        'partners': [
+            {'id': p.id, 'username': p.username}
+            for p in partners
+        ]
+    }, status=status.HTTP_200_OK)
+
 # ================= TRANSACTION ENDPOINTS =================
 
 @api_view(['GET', 'POST'])
@@ -125,10 +139,13 @@ def user_view(request):
 def transaction_list_create_view(request):
     if request.method == 'GET':
         user_id = request.query_params.get('user_id')
-        queryset = Transaction.objects.all()
+        queryset = Transaction.objects.select_related('user', 'related_user').all()
         
         if user_id:
             queryset = queryset.filter(user_id=user_id)
+        else:
+            # Combine History: Show only 1 consolidated entry for transfers (Sender OUT entry)
+            queryset = queryset.exclude(type='TRANSFER', transfer_direction='IN')
             
         queryset = queryset.order_by('-date')
         
@@ -141,16 +158,20 @@ def transaction_list_create_view(request):
                 'type': t.type,
                 'amount': float(t.amount),
                 'notes': t.notes,
-                'date': t.date.isoformat()
+                'date': t.date.isoformat(),
+                'related_user_id': t.related_user.id if t.related_user else None,
+                'related_username': t.related_user.username if t.related_user else None,
+                'transfer_direction': t.transfer_direction,
+                'transfer_link_id': t.transfer_link_id
             })
         return Response({'transactions': txs}, status=status.HTTP_200_OK)
         
     elif request.method == 'POST':
-        tx_type = request.data.get('type') # 'INVEST' or 'COLLECT'
+        tx_type = request.data.get('type') # 'INVEST', 'COLLECT', 'WITHDRAW', 'TRANSFER'
         amount = request.data.get('amount')
         notes = request.data.get('notes')
         
-        if tx_type not in ['INVEST', 'COLLECT', 'WITHDRAW']:
+        if tx_type not in ['INVEST', 'COLLECT', 'WITHDRAW', 'TRANSFER']:
             return Response({'error': 'Invalid transaction type'}, status=status.HTTP_400_BAD_REQUEST)
         if not amount or float(amount) <= 0:
             return Response({'error': 'Valid positive amount is required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -166,26 +187,85 @@ def transaction_list_create_view(request):
                 tx_date = timezone.make_aware(timezone.datetime.combine(parsed_d, timezone.now().time()))
             
         try:
-            t = Transaction.objects.create(
-                user=request.user,
-                type=tx_type,
-                amount=amount,
-                notes=notes.strip(),
-                date=tx_date
-            )
-            send_fcm_notification(t)
-            return Response({
-                'message': 'Transaction logged successfully',
-                'transaction': {
-                    'id': t.id,
-                    'user_id': t.user.id,
-                    'username': t.user.username,
-                    'type': t.type,
-                    'amount': float(t.amount),
-                    'notes': t.notes,
-                    'date': t.date.isoformat()
-                }
-            }, status=status.HTTP_201_CREATED)
+            if tx_type == 'TRANSFER':
+                receiver_id = request.data.get('receiver_id')
+                if not receiver_id:
+                    return Response({'error': 'Recipient partner is required for transfer'}, status=status.HTTP_400_BAD_REQUEST)
+                try:
+                    receiver_user = User.objects.get(pk=receiver_id)
+                except User.DoesNotExist:
+                    return Response({'error': 'Selected partner does not exist'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                if receiver_user.id == request.user.id:
+                    return Response({'error': 'Cannot transfer cash to yourself'}, status=status.HTTP_400_BAD_REQUEST)
+                
+                link_id = uuid.uuid4().hex
+                with db_transaction.atomic():
+                    # Sender entry (OUT)
+                    t_out = Transaction.objects.create(
+                        user=request.user,
+                        related_user=receiver_user,
+                        transfer_direction='OUT',
+                        transfer_link_id=link_id,
+                        type='TRANSFER',
+                        amount=amount,
+                        notes=notes.strip(),
+                        date=tx_date
+                    )
+                    # Receiver entry (IN)
+                    t_in = Transaction.objects.create(
+                        user=receiver_user,
+                        related_user=request.user,
+                        transfer_direction='IN',
+                        transfer_link_id=link_id,
+                        type='TRANSFER',
+                        amount=amount,
+                        notes=notes.strip(),
+                        date=tx_date
+                    )
+                
+                send_fcm_notification(t_out)
+                return Response({
+                    'message': f'Transferred ₹{amount} to {receiver_user.username} successfully',
+                    'transaction': {
+                        'id': t_out.id,
+                        'user_id': t_out.user.id,
+                        'username': t_out.user.username,
+                        'type': t_out.type,
+                        'amount': float(t_out.amount),
+                        'notes': t_out.notes,
+                        'date': t_out.date.isoformat(),
+                        'related_user_id': receiver_user.id,
+                        'related_username': receiver_user.username,
+                        'transfer_direction': 'OUT',
+                        'transfer_link_id': link_id
+                    }
+                }, status=status.HTTP_201_CREATED)
+            else:
+                t = Transaction.objects.create(
+                    user=request.user,
+                    type=tx_type,
+                    amount=amount,
+                    notes=notes.strip(),
+                    date=tx_date
+                )
+                send_fcm_notification(t)
+                return Response({
+                    'message': 'Transaction logged successfully',
+                    'transaction': {
+                        'id': t.id,
+                        'user_id': t.user.id,
+                        'username': t.user.username,
+                        'type': t.type,
+                        'amount': float(t.amount),
+                        'notes': t.notes,
+                        'date': t.date.isoformat(),
+                        'related_user_id': None,
+                        'related_username': None,
+                        'transfer_direction': None,
+                        'transfer_link_id': None
+                    }
+                }, status=status.HTTP_201_CREATED)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -194,7 +274,7 @@ def transaction_list_create_view(request):
 @permission_classes([IsAuthenticated])
 def transaction_detail_view(request, pk):
     try:
-        t = Transaction.objects.get(pk=pk)
+        t = Transaction.objects.select_related('user', 'related_user').get(pk=pk)
     except Transaction.DoesNotExist:
         return Response({'error': 'Transaction not found'}, status=status.HTTP_404_NOT_FOUND)
 
@@ -208,11 +288,18 @@ def transaction_detail_view(request, pk):
         collect_sum = sum(float(x.amount) for x in user_txs_up_to.filter(type='COLLECT'))
         invest_sum = sum(float(x.amount) for x in user_txs_up_to.filter(type='INVEST'))
         withdraw_sum = sum(float(x.amount) for x in user_txs_up_to.filter(type='WITHDRAW'))
-        balance_after = collect_sum - invest_sum - withdraw_sum
+        transfer_in_sum = sum(float(x.amount) for x in user_txs_up_to.filter(type='TRANSFER', transfer_direction='IN'))
+        transfer_out_sum = sum(float(x.amount) for x in user_txs_up_to.filter(type='TRANSFER', transfer_direction='OUT'))
+        
+        balance_after = (collect_sum + transfer_in_sum) - (invest_sum + withdraw_sum + transfer_out_sum)
 
         if t.type == 'COLLECT':
             balance_before = balance_after - float(t.amount)
-        else:
+        elif t.type == 'TRANSFER' and t.transfer_direction == 'IN':
+            balance_before = balance_after - float(t.amount)
+        elif t.type == 'TRANSFER' and t.transfer_direction == 'OUT':
+            balance_before = balance_after + float(t.amount)
+        else: # INVEST or WITHDRAW
             balance_before = balance_after + float(t.amount)
 
         return Response({
@@ -225,21 +312,32 @@ def transaction_detail_view(request, pk):
                 'notes': t.notes,
                 'date': t.date.isoformat(),
                 'updated_at': t.updated_at.isoformat(),
+                'related_user_id': t.related_user.id if t.related_user else None,
+                'related_username': t.related_user.username if t.related_user else None,
+                'transfer_direction': t.transfer_direction,
+                'transfer_link_id': t.transfer_link_id,
                 'balanceAfter': balance_after,
                 'balanceBefore': balance_before
             }
         }, status=status.HTTP_200_OK)
         
-    # Security: Only owner can edit/delete their own transaction
-    if t.user != request.user:
-        return Response({'error': 'You do not have permission to modify this transaction'}, status=status.HTTP_403_FORBIDDEN)
+    # Permission checks:
+    if t.type == 'TRANSFER':
+        # Only the sender (transfer_direction == 'OUT') can modify or delete a transfer
+        if t.transfer_direction != 'OUT':
+            return Response({'error': 'Only the sender can edit or delete this partner transfer'}, status=status.HTTP_403_FORBIDDEN)
+        if t.user != request.user:
+            return Response({'error': 'You do not have permission to modify this transaction'}, status=status.HTTP_403_FORBIDDEN)
+    else:
+        if t.user != request.user:
+            return Response({'error': 'You do not have permission to modify this transaction'}, status=status.HTTP_403_FORBIDDEN)
         
     if request.method == 'PUT':
         tx_type = request.data.get('type')
         amount = request.data.get('amount')
         notes = request.data.get('notes')
         
-        if tx_type not in ['INVEST', 'COLLECT', 'WITHDRAW']:
+        if tx_type not in ['INVEST', 'COLLECT', 'WITHDRAW', 'TRANSFER']:
             return Response({'error': 'Invalid transaction type'}, status=status.HTTP_400_BAD_REQUEST)
         if not amount or float(amount) <= 0:
             return Response({'error': 'Valid positive amount is required'}, status=status.HTTP_400_BAD_REQUEST)
@@ -247,17 +345,32 @@ def transaction_detail_view(request, pk):
             return Response({'error': 'Notes are required'}, status=status.HTTP_400_BAD_REQUEST)
             
         try:
-            t.type = tx_type
-            t.amount = amount
-            t.notes = notes.strip()
-            t.save()
+            if t.type == 'TRANSFER':
+                if t.transfer_link_id:
+                    Transaction.objects.filter(transfer_link_id=t.transfer_link_id).update(
+                        amount=amount,
+                        notes=notes.strip()
+                    )
+                else:
+                    t.amount = amount
+                    t.notes = notes.strip()
+                    t.save()
+            else:
+                t.type = tx_type
+                t.amount = amount
+                t.notes = notes.strip()
+                t.save()
             return Response({'message': 'Transaction updated successfully'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
             
     elif request.method == 'DELETE':
         try:
-            t.delete()
+            if t.type == 'TRANSFER' and t.transfer_link_id:
+                # Delete both linked sender and receiver transactions
+                Transaction.objects.filter(transfer_link_id=t.transfer_link_id).delete()
+            else:
+                t.delete()
             return Response({'message': 'Transaction deleted successfully'}, status=status.HTTP_200_OK)
         except Exception as e:
             return Response({'error': str(e)}, status=status.HTTP_400_BAD_REQUEST)
@@ -273,15 +386,21 @@ def dashboard_summary_view(request):
         user_summaries = []
         
         for u in users:
-            # Calculate invest, collect, and withdraw totals
+            # Calculate invest, collect, withdraw, and partner transfers
             invests = Transaction.objects.filter(user=u, type='INVEST')
             collects = Transaction.objects.filter(user=u, type='COLLECT')
             withdraws = Transaction.objects.filter(user=u, type='WITHDRAW')
+            transfers_out = Transaction.objects.filter(user=u, type='TRANSFER', transfer_direction='OUT')
+            transfers_in = Transaction.objects.filter(user=u, type='TRANSFER', transfer_direction='IN')
             
             total_invest = sum(float(tx.amount) for tx in invests)
             total_collect = sum(float(tx.amount) for tx in collects)
             total_withdraw = sum(float(tx.amount) for tx in withdraws)
-            balance = total_collect - total_invest - total_withdraw
+            total_transfer_out = sum(float(tx.amount) for tx in transfers_out)
+            total_transfer_in = sum(float(tx.amount) for tx in transfers_in)
+            
+            # Partner Net Balance: Collect + Transfer_In - Invest - Withdraw - Transfer_Out
+            balance = (total_collect + total_transfer_in) - (total_invest + total_withdraw + total_transfer_out)
             
             user_summaries.append({
                 'user_id': u.id,
@@ -289,15 +408,19 @@ def dashboard_summary_view(request):
                 'total_invest': total_invest,
                 'total_collect': total_collect,
                 'total_withdraw': total_withdraw,
+                'total_transfer_out': total_transfer_out,
+                'total_transfer_in': total_transfer_in,
                 'balance': balance
             })
             
-        # Daily trends grouping (last 30 days)
+        # Daily trends grouping (last 30 days) - transfers excluded to keep company trends pure
         thirty_days_ago = timezone.now() - timezone.timedelta(days=30)
         tx_queryset = Transaction.objects.filter(date__gte=thirty_days_ago).order_by('date')
         
         daily_trends = {}
         for tx in tx_queryset:
+            if tx.type not in ['INVEST', 'COLLECT', 'WITHDRAW']:
+                continue
             # Group by local/UTC date string (YYYY-MM-DD)
             date_str = tx.date.strftime('%Y-%m-%d')
             if date_str not in daily_trends:
@@ -346,22 +469,31 @@ def send_fcm_notification(tx):
             print("No recipient device tokens registered.")
             return
 
-        if tx.type == 'INVEST':
-            display_type = "Investment (-)"
-        elif tx.type == 'WITHDRAW':
-            display_type = "Personal Withdrawal (-)"
-        else:
-            display_type = "Cash Collection (+)"
-        
         # Calculate balance after this transaction for tx.user
         user_txs = Transaction.objects.filter(user=tx.user)
         user_collect = sum(float(x.amount) for x in user_txs.filter(type='COLLECT'))
         user_invest = sum(float(x.amount) for x in user_txs.filter(type='INVEST'))
         user_withdraw = sum(float(x.amount) for x in user_txs.filter(type='WITHDRAW'))
-        curr_balance = user_collect - user_invest - user_withdraw
+        user_tin = sum(float(x.amount) for x in user_txs.filter(type='TRANSFER', transfer_direction='IN'))
+        user_tout = sum(float(x.amount) for x in user_txs.filter(type='TRANSFER', transfer_direction='OUT'))
+        curr_balance = (user_collect + user_tin) - (user_invest + user_withdraw + user_tout)
 
-        notification_title = "New Transaction Logged"
-        notification_body = f"{display_type} of ₹{tx.amount} for: {tx.notes} (by {tx.user.username}) • Bal: ₹{curr_balance:,.2f}"
+        if tx.type == 'INVEST':
+            display_type = "Investment (-)"
+            notification_title = "New Transaction Logged"
+            notification_body = f"{display_type} of ₹{tx.amount} for: {tx.notes} (by {tx.user.username}) • Bal: ₹{curr_balance:,.2f}"
+        elif tx.type == 'WITHDRAW':
+            display_type = "Personal Withdrawal (-)"
+            notification_title = "New Transaction Logged"
+            notification_body = f"{display_type} of ₹{tx.amount} for: {tx.notes} (by {tx.user.username}) • Bal: ₹{curr_balance:,.2f}"
+        elif tx.type == 'TRANSFER':
+            receiver_name = tx.related_user.username if tx.related_user else 'Partner'
+            notification_title = f"Cash Transfer: {tx.user.username} ➔ {receiver_name}"
+            notification_body = f"₹{tx.amount} transferred from {tx.user.username} to {receiver_name} for: {tx.notes} • Sender Bal: ₹{curr_balance:,.2f}"
+        else:
+            display_type = "Cash Collection (+)"
+            notification_title = "New Transaction Logged"
+            notification_body = f"{display_type} of ₹{tx.amount} for: {tx.notes} (by {tx.user.username}) • Bal: ₹{curr_balance:,.2f}"
 
         data_payload = {
             'tx_id': str(tx.id),
@@ -371,6 +503,9 @@ def send_fcm_notification(tx):
             'username': tx.user.username,
             'balance_after': str(curr_balance)
         }
+        if tx.related_user:
+            data_payload['related_username'] = tx.related_user.username
+            data_payload['transfer_direction'] = str(tx.transfer_direction)
 
         # High-priority Android notification configuration for background delivery
         android_config = messaging.AndroidConfig(

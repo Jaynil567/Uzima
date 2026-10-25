@@ -629,6 +629,17 @@ body {
   box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
 }
 
+.btn-transfer {
+  background: #0284c7;
+  color: #fff;
+  box-shadow: 0 4px 15px rgba(2, 132, 199, 0.25);
+}
+
+.btn-transfer:hover {
+  background: #0369a1;
+  box-shadow: 0 6px 20px rgba(2, 132, 199, 0.35);
+}
+
 /* Users Ledger Styles */
 .users-ledger {
   display: flex;
@@ -941,5 +952,12 @@ body {
 
 .history-item.type-withdraw {
   border-left: 3px solid #f59e0b;
+}
+
+.history-item.type-transfer,
+.history-item.type-transfer-out,
+.history-item.type-transfer-in {
+  border-left: 3px solid #38bdf8;
+  background: linear-gradient(90deg, rgba(56, 189, 248, 0.04) 0%, rgba(255, 255, 255, 0.01) 100%);
 }
 
